@@ -1,0 +1,115 @@
+El objetivo es armar una justificación objetiva del proyecto. Para eso, vamos a usar como base la idea de la "justificación de negocio continua" (o "continued business justification") que propone la metodología PRINCE2. 
+
+¿Cómo armar la justificación? Normalmente se crea un "caso de negocio" (o business case) que consta de evaluaciones objetivas sobre la viabilidad y entrega de beneficios de un proyecto, el cual es revisitado en forma periódica para evaluar su vigencia y el cumplimiento de los resultados prometidos. No lo vamos a hacer completo porque nos llevaría la materia completa, pero sí les dejo una estructura típica en la cual se pueden basar. 
+
+
+
+En este caso deben completan los puntos 1.A., 3 A. y B. (al menos un borrador), 5 A. y B (borrador) y 8. 
+
+
+
+Recuerden: se busca que el proyecto que genere impacto y traiga beneficios (nadie hace un proyecto para que todo quede igual que antes). No estamos hablando solamente de cuestiones financieras, sino que aplican aspectos menos tangibles. 
+
+
+
+Ejemplo de estructura de un business case genérico:
+
+1. Razones
+
+A. El porqué del proyecto: qué problema resuelve o qué oportunidad se aprovecha.
+
+B. Alineación con objetivos estratégicos de la organización.
+
+2. Opciones
+
+A. Alternativas analizadas: ¿hay más de una forma de lograr los beneficios?
+
+B. Por qué la opción seleccionada es la más adecuada
+
+3. Beneficios esperados
+
+A. Define los beneficios cuantitativos (en términos de $) y cualitativos (reputación, bienestar, etc.).
+
+B. Indica cómo y cuándo se medirán.
+
+4. Riesgos
+
+A. Enumera los principales riesgos que podrían reducir los beneficios o aumentar los costos.
+
+B. Incluye cómo se gestionarán.
+
+5. Costos y cronograma
+
+A. Desglose estimado de los costos, tanto directos como indirectos.
+
+B. Calendario y el momento en que se espera empezar a ver alguno de los beneficios.
+
+6. Evaluación financiera
+
+A. ROI (Return on Investment), VAN (Valor Actual Neto) u otros indicadores para medir la rentabilidad.
+
+B. Los supuestos y variables críticas.
+
+7. Decisiones de continuar/cancelar
+
+A. Mecanismo para revisar periódicamente el Business Case (por ejemplo, al final de cada fase).
+
+B. Criterios para tomar decisiones de recorte, ajuste o incluso cancelación si la justificación se pierde.
+
+8. Plan de revisión de beneficios
+
+A. Cómo se hará el seguimiento de beneficios durante y después del proyecto.
+
+1.A. El porqué del proyecto: problema a resolver u oportunidad a aprovechar
+
+
+
+El proyecto surge para resolver las ineficiencias del sistema actual de títulos en papel o PDFs simples, los cuales sufren de fraude y falsificaciones por no contar con validación criptográfica en origen. Además, las verificaciones manuales tardan semanas, generan gastos operativos en impresión o sellado, y sobrecargan a las instituciones con consultas permanentes, sumado a lo molesto que es para el graduado pedir un duplicado si lo pierde. Frente a esto, la oportunidad es aprovechar la criptografía y la tecnología descentralizada para emitir credenciales digitales infalsificables que se verifiquen al instante y sin costo, sin depender de que la universidad responda manualmente cada solicitud.
+
+
+
+3.A. Beneficios cuantitativos y cualitativos
+
+
+
+En cuanto a los beneficios cuantitativos y cualitativos, la meta principal es reducir drásticamente los costos directos de emisión en papel y recortar los tiempos de verificación, pasando de semanas a solo unos segundos. Esto alivia la carga administrativa al filtrar casi todas las consultas manuales a la secretaría. Además, la universidad suma prestigio innovador, se garantiza matemáticamente la autenticidad e infalsificabilidad de los documentos y se le entrega a la persona que hizo el curso el control total de su credencial digital en su propia billetera móvil.
+
+
+
+3.B. Cómo y cuándo se medirán los beneficios
+
+
+
+Para medir estos resultados, se comparan los costos y tiempos del sistema tradicional contra los registros del nuevo sistema digital, sumado a encuestas de satisfacción y el conteo de tickets de consulta. El seguimiento se adapta a un desarrollo de 4 meses: una línea base al inicio (Mes 1), una evaluación durante las pruebas de la prueba piloto (Mes 3) y mediciones post-lanzamiento en los meses 4 y 8 para verificar que los beneficios proyectados se sostengan con el uso real.
+
+
+
+5.A. Desglose estimado de costos
+
+
+
+Para un MVP acotado a 4 meses, los costos directos se concentran en el tiempo de desarrollo (backend, frontend y contratos criptográficos), el diseño de interfaz y la infraestructura básica necesaria (servidores cloud, red y licencias simples de dominio o SSL). En cuanto a los indirectos, se consideran gastos mínimos para una capacitación rápida al personal administrativo, una consulta legal puntual sobre protección de datos y la difusión interna dentro de la facultad.
+
+
+
+5.B. Calendario y momento de obtención de beneficios
+
+
+
+Mes 1: Análisis de requerimientos, definición de arquitectura y revisión legal.
+
+Meses 2 y 3: Desarrollo iterativo del MVP y armado de los contratos criptográficos.
+
+Mes 4: Prueba piloto en un curso acotado, ajustes finales y paso a producción con capacitación al personal.
+
+Los beneficios en agilidad de tiempos se empiezan a notar en el Mes 3 durante la prueba con usuarios reales, mientras que el ahorro económico se concreta a partir del Mes 4, con la primera camada que reciba sus credenciales digitales.
+
+
+
+8. Plan de revisión de beneficios
+
+
+
+Durante el proyecto: Hacemos un control al final del Mes 1 para confirmar la viabilidad técnica/legal, una revisión en el Mes 3 con la secretaría académica para validar que el flujo del piloto sea cómodo, y el cierre formal en el Mes 4.
+
+Post-proyecto: Realizamos una revisión a los 2 meses de lanzado (Mes 6) para verificar el ahorro en papel y la estabilidad del sistema, y una evaluación al final del cuatrimestre para analizar si se expande a otros cursos.
