@@ -3,9 +3,11 @@ from fastapi.openapi.utils import get_openapi
 
 from app.api import auth, batches, certificates, stubs
 from app.api.errors import install_error_handlers
+from app.config import get_settings
 
 
 def create_app() -> FastAPI:
+    get_settings()  # falla al arrancar si la configuración es inválida (p. ej. JWT_SECRET)
     app = FastAPI(title="Certificados API", version="0.1.0")
     install_error_handlers(app)
     api = APIRouter(prefix="/api")

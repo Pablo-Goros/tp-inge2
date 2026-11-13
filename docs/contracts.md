@@ -38,7 +38,7 @@ docs/
 
 | Variable | Uso |
 | --- | --- |
-| `DATABASE_URL` | PostgreSQL |
+| `DATABASE_URL` | PostgreSQL. El esquema en uso es `postgresql+psycopg://`; un `postgresql://` (o `postgres://`) plano se reescribe a ese esquema al cargar la configuración |
 | `RABBITMQ_URL` | AMQP |
 | `JWT_SECRET` | Firma de tokens |
 | `DEMO_PASSWORD` | Contraseña de las cuentas sembradas por `init` (valor de demo en `.env.example`; otra en cloud) |
