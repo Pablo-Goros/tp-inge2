@@ -145,6 +145,7 @@ def test_detail_and_list_statement_count_does_not_grow_with_items(client, sessio
     big, _ = _mk_batch(session, op, ["ISSUED", "FAILED", "PENDING"] * 10)
     n_small = _count_statements(session, lambda: client.get(f"/api/batches/{small.id}", headers=h))
     n_big = _count_statements(session, lambda: client.get(f"/api/batches/{big.id}", headers=h))
+    assert n_small > 0
     assert n_small == n_big
     l2 = _count_statements(session, lambda: client.get("/api/batches", headers=h))
     _mk_batch(session, op, ["ISSUED"])

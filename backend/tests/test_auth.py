@@ -22,6 +22,21 @@ def test_login_ok_returns_token_role_name(client, users):
     assert dt.timedelta(hours=7, minutes=55) < exp - dt.datetime.now(dt.timezone.utc) <= dt.timedelta(hours=8)
 
 
+def test_login_normalizes_email(client, users):
+    r = login(client, "  OP@Itba.Test ")
+    assert r.status_code == 200
+    assert r.json()["role"] == "operator"
+
+
+def test_dummy_hash_uses_configured_rounds_lazily(monkeypatch, clear_settings_cache):
+    from app.api import auth
+
+    auth._dummy_hash.cache_clear()
+    monkeypatch.setenv("BCRYPT_ROUNDS", "5")
+    assert auth._dummy_hash().split("$")[2] == "05"
+    auth._dummy_hash.cache_clear()
+
+
 def test_login_wrong_password_401_envelope(client, users):
     r = login(client, "op@itba.test", "mala")
     assert r.status_code == 401
@@ -42,7 +57,7 @@ def test_student_token_on_operator_route_403(client, users):
     assert r.json()["error"]["code"] == "FORBIDDEN"
 
 
-def test_operator_token_reaches_stub_501(client, users):
+def test_student_token_reaches_stub_501(client, users):
     token = login(client, "al@itba.test").json()["access_token"]
     r = client.get(f"/api/verify/{uuid.uuid4()}", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 501

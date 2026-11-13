@@ -1,4 +1,5 @@
 import datetime as dt
+from functools import lru_cache
 import uuid
 from collections.abc import Callable
 
@@ -13,14 +14,19 @@ from sqlalchemy.orm import Session
 from app.api.errors import forbidden, unauthenticated
 from app.api.schemas import ErrorResponse
 from app.config import get_settings
+from app.domain.normalize import normalize_email
 from app.infrastructure.db import get_session
 from app.infrastructure.models import User
 
 TOKEN_TTL = dt.timedelta(hours=8)
 _bearer = HTTPBearer(auto_error=False, description="JWT obtenido en POST /api/auth/login")
 
-# Hash fijo para igualar el tiempo de respuesta cuando el email no existe.
-_DUMMY_HASH = bcrypt.hashpw(b"dummy", bcrypt.gensalt()).decode()
+
+@lru_cache
+def _dummy_hash() -> str:
+    """Hash fijo (con las rondas configuradas) para igualar el tiempo cuando el email no existe."""
+    return bcrypt.hashpw(b"dummy", bcrypt.gensalt(rounds=get_settings().bcrypt_rounds)).decode()
+
 
 def hash_password(password: str, rounds: int = 12) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=rounds)).decode()
@@ -55,8 +61,8 @@ def create_token(user: User) -> str:
     responses={400: {"model": ErrorResponse}, 401: {"model": ErrorResponse}},
 )
 def login(body: LoginRequest, session: Session = Depends(get_session)):
-    user = session.scalar(select(User).where(User.email == body.email))
-    stored = user.password_hash if user is not None else _DUMMY_HASH
+    user = session.scalar(select(User).where(User.email == normalize_email(body.email)))
+    stored = user.password_hash if user is not None else _dummy_hash()
     try:
         ok = bcrypt.checkpw(body.password.encode(), stored.encode()) and user is not None
     except ValueError:  # contraseña >72 bytes o hash almacenado malformado
