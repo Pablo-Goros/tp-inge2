@@ -1,6 +1,8 @@
 import datetime as dt
 import json
+import logging
 import os
+import signal
 import subprocess
 import threading
 import time
@@ -33,6 +35,7 @@ def channel():
     ch = conn.channel()
     declare_topology(ch)
     _purge(ch)
+    ch.confirm_delivery()  # publish_pending exige confirmaciones ya habilitadas (una vez por canal)
     yield ch
     try:
         _purge(ch)
@@ -164,9 +167,11 @@ def test_two_publishers_do_not_double_publish_same_row(engine, committed, channe
     def worker():
         conn = connect(os.environ["RABBITMQ_URL"])
         try:
+            ch = conn.channel()
+            ch.confirm_delivery()
             with Session(engine) as s:
                 total = 0
-                while (n := publish_pending(s, conn.channel(), batch_size=3)):
+                while (n := publish_pending(s, ch, batch_size=3)):
                     total += n
                 return total
         finally:
@@ -218,3 +223,61 @@ def test_broker_down_leaves_rows_pending_and_recovers(engine, committed):
         assert len(drain(conn.channel())) == 3
     finally:
         conn.close()
+
+
+def test_idle_cycles_log_no_pika_errors_and_connection_survives(engine, committed, monkeypatch, caplog,
+                                                                clear_settings_cache):
+    from app.entrypoints.publisher import run
+
+    committed(0)  # outbox vacío
+    monkeypatch.setenv("POLL_INTERVAL_SECONDS", "0.1")
+    get_settings_cache_clear()
+    caplog.set_level(logging.DEBUG)
+    stop = threading.Event()
+    t = threading.Thread(target=run, args=(stop,), daemon=True)
+    t.start()
+    time.sleep(2.5)  # ~25 ciclos ociosos
+    assert t.is_alive()
+    stop.set()
+    t.join(5)
+    assert not t.is_alive()
+    bad = [r for r in caplog.records if r.levelno >= logging.ERROR]
+    assert bad == [], [r.getMessage() for r in bad]
+
+
+def get_settings_cache_clear():
+    from app.config import get_settings
+    get_settings.cache_clear()
+
+
+def test_signal_handlers_set_stop_event():
+    from app.entrypoints.publisher import install_signal_handlers
+
+    stop = threading.Event()
+    old = {s: signal.getsignal(s) for s in (signal.SIGTERM, signal.SIGINT)}
+    try:
+        install_signal_handlers(stop)
+        signal.raise_signal(signal.SIGTERM)
+        assert stop.is_set()
+        stop.clear()
+        signal.raise_signal(signal.SIGINT)
+        assert stop.is_set()
+    finally:
+        for s, h in old.items():
+            signal.signal(s, h)
+
+
+def test_run_exits_promptly_after_stop(engine, committed, monkeypatch, clear_settings_cache):
+    from app.entrypoints.publisher import run
+
+    committed(0)
+    monkeypatch.setenv("POLL_INTERVAL_SECONDS", "30")  # la parada no espera el intervalo completo
+    get_settings_cache_clear()
+    stop = threading.Event()
+    t = threading.Thread(target=run, args=(stop,), daemon=True)
+    t.start()
+    time.sleep(1.5)
+    t0 = time.monotonic()
+    stop.set()
+    t.join(5)
+    assert not t.is_alive() and time.monotonic() - t0 < 2

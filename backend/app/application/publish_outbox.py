@@ -19,13 +19,15 @@ def publish_pending(session: Session, channel: BlockingChannel, batch_size: int 
     `published_at` se marca solo tras la confirmación del broker. El lock FOR UPDATE SKIP LOCKED
     dura lo que el lote. Si el proceso cae entre confirmar y commitear, la fila se republica
     (el worker tolera duplicados).
+
+    El canal debe tener habilitadas las confirmaciones (`channel.confirm_delivery()`, una sola vez
+    por canal: pika loguea un ERROR si se repite); lo hace el llamador.
     """
     rows = session.scalars(
         select(Outbox).where(Outbox.published_at.is_(None))
         .order_by(Outbox.created_at, Outbox.id).limit(batch_size)
         .with_for_update(skip_locked=True)
     ).all()
-    channel.confirm_delivery()
     published = 0
     try:
         for row in rows:
