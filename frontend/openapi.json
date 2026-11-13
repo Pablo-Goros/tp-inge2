@@ -825,7 +825,9 @@
               "FORBIDDEN",
               "NOT_FOUND",
               "IDEMPOTENCY_CONFLICT",
-              "UNAVAILABLE"
+              "UNAVAILABLE",
+              "HTTP_ERROR",
+              "INTERNAL_ERROR"
             ],
             "title": "Code"
           },

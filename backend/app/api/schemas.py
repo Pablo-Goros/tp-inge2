@@ -10,7 +10,7 @@ BatchStatus = Literal["IN_PROGRESS", "COMPLETED", "COMPLETED_WITH_ERRORS"]
 class ErrorBody(BaseModel):
     code: Literal[
         "VALIDATION_ERROR", "UNAUTHENTICATED", "FORBIDDEN", "NOT_FOUND",
-        "IDEMPOTENCY_CONFLICT", "UNAVAILABLE",
+        "IDEMPOTENCY_CONFLICT", "UNAVAILABLE", "HTTP_ERROR", "INTERNAL_ERROR",
     ]
     message: str
     details: list = []

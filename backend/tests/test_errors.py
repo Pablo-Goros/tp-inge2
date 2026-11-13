@@ -57,3 +57,8 @@ def test_openapi_has_no_422_and_documents_400_and_501():
     assert list(pdf) == ["application/pdf"]
     post = spec["paths"]["/api/batches"]["post"]["responses"]
     assert "200" in post and "201" in post
+
+
+def test_openapi_error_code_enum_includes_http_and_internal_error(client):
+    enum = client.get("/openapi.json").json()["components"]["schemas"]["ErrorBody"]["properties"]["code"]["enum"]
+    assert {"HTTP_ERROR", "INTERNAL_ERROR"} <= set(enum)

@@ -1,11 +1,13 @@
 """Escribe frontend/openapi.json desde la app FastAPI. Uso: python scripts/export_openapi.py"""
 import json
+import os
 import pathlib
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "backend"))
 
+os.environ.setdefault("JWT_SECRET", "openapi-export-only-not-a-real-secret")  # la spec no usa el secreto
 from app.api.main import create_app  # noqa: E402
 
 out = ROOT / "frontend" / "openapi.json"
