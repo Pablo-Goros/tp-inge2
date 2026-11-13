@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.application.seed import seed
 from app.config import get_settings
-from app.infrastructure.broker import declare_topology
+from app.infrastructure.broker import connect, declare_topology
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
 INIT_LOCK_KEY = 420101  # clave fija del advisory lock de init
@@ -30,12 +30,7 @@ def _retry(what: str, fn, deadline: float, total: int):
 
 
 def _broker_connect(url: str) -> pika.BlockingConnection:
-    params = pika.URLParameters(url)
-    params.socket_timeout = ATTEMPT_TIMEOUT
-    params.blocked_connection_timeout = ATTEMPT_TIMEOUT
-    params.stack_timeout = ATTEMPT_TIMEOUT
-    params.connection_attempts = 1
-    return pika.BlockingConnection(params)
+    return connect(url, ATTEMPT_TIMEOUT)
 
 
 def _migrate_and_seed(engine, bcrypt_rounds: int) -> None:

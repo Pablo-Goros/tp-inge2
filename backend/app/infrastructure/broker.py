@@ -4,8 +4,15 @@ from pika.adapters.blocking_connection import BlockingChannel
 from app.config import get_settings
 
 
-def connect(url: str) -> pika.BlockingConnection:
-    return pika.BlockingConnection(pika.URLParameters(url))
+def connect(url: str, timeout: float | None = None) -> pika.BlockingConnection:
+    """Con `timeout` la conexión es acotada (un intento, todos los plazos = timeout)."""
+    params = pika.URLParameters(url)
+    if timeout is not None:
+        params.socket_timeout = timeout
+        params.blocked_connection_timeout = timeout
+        params.stack_timeout = timeout
+        params.connection_attempts = 1
+    return pika.BlockingConnection(params)
 
 
 def declare_topology(channel: BlockingChannel) -> None:

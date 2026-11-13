@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     fault_injection: str = ""
     init_timeout_seconds: int = 60
     bcrypt_rounds: int = 12
+    poll_interval_seconds: float = 1.0
 
 
 def get_settings() -> Settings:
