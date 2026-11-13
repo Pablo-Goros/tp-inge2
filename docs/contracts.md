@@ -40,7 +40,7 @@ docs/
 | --- | --- |
 | `DATABASE_URL` | PostgreSQL. El esquema en uso es `postgresql+psycopg://`; un `postgresql://` (o `postgres://`) plano se reescribe a ese esquema al cargar la configuración |
 | `RABBITMQ_URL` | AMQP |
-| `JWT_SECRET` | Firma de tokens |
+| `JWT_SECRET` | Firma de tokens. **Obligatoria, sin valor por defecto, mínimo 32 bytes**: la API, `init` y el publicador no arrancan sin ella |
 | `DEMO_PASSWORD` | Contraseña de las cuentas sembradas por `init` (valor de demo en `.env.example`; otra en cloud) |
 | `PUBLIC_BASE_URL` | Base de la URL del QR, p. ej. `http://localhost:8080`. **Fijar antes de emitir el lote de demo**: cambiarla altera el PDF |
 | `REGISTRY_BACKEND` | `simulated` (por defecto) o `chain` (tarea extra) |
