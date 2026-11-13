@@ -35,3 +35,32 @@ def session(engine):
     sess.close()
     trans.rollback()
     conn.close()
+
+
+@pytest.fixture
+def client(session):
+    from fastapi.testclient import TestClient
+
+    from app.api.main import create_app
+    from app.infrastructure.db import get_session
+
+    app = create_app()
+    app.dependency_overrides[get_session] = lambda: session
+    return TestClient(app)
+
+
+@pytest.fixture
+def users(session):
+    import bcrypt
+
+    from app.infrastructure.models import Institution, User
+
+    inst = Institution(name="ITBA")
+    session.add(inst)
+    session.flush()
+    h = bcrypt.hashpw(b"demo1234", bcrypt.gensalt(rounds=4)).decode()
+    op = User(institution_id=inst.id, email="op@itba.test", name="Operadora", password_hash=h, role="operator")
+    st = User(institution_id=inst.id, email="al@itba.test", name="Alumno", password_hash=h, role="student")
+    session.add_all([op, st])
+    session.flush()
+    return {"operator": op, "student": st}
