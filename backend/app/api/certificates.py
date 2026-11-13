@@ -48,7 +48,12 @@ def certificate_pdf(cert_id: uuid.UUID, user: User = Depends(current_user),
     if row is None:
         raise not_found("Certificado inexistente")
     pdf, student_id, institution_id = row
-    allowed = student_id == user.id if user.role == "student" else institution_id == user.institution_id
+    if user.role == "student":
+        allowed = student_id == user.id
+    elif user.role == "operator":
+        allowed = institution_id == user.institution_id
+    else:
+        allowed = False
     if not allowed:
         raise not_found("Certificado inexistente")
     return Response(

@@ -62,6 +62,9 @@ def test_list_excludes_not_issued(client, users, session):
         _cert(session, op, st, status=s, course=f"c{i}", with_row=False)
     # ISSUED sin fila certificates: tampoco se lista
     _cert(session, op, st, course="sinfila", with_row=False)
+    # No emitidos CON PDF almacenado: tampoco se listan
+    for i, s in enumerate((RequestStatus.PENDING, RequestStatus.PROCESSING, RequestStatus.FAILED)):
+        _cert(session, op, st, status=s, course=f"conpdf{i}")
     assert client.get("/api/me/certificates", headers=_auth(client, "al@itba.test")).json() == []
 
 
@@ -92,9 +95,10 @@ def test_student_other_students_pdf_404(client, users, session):
     assert resp.json()["error"]["code"] == "NOT_FOUND"
 
 
+@pytest.mark.parametrize("with_row", [False, True])
 @pytest.mark.parametrize("status", [RequestStatus.PENDING, RequestStatus.PROCESSING, RequestStatus.FAILED])
-def test_pdf_not_yet_issued_404(client, users, session, status):
-    r = _cert(session, users["operator"], users["student"], status=status, with_row=False)
+def test_pdf_not_yet_issued_404(client, users, session, status, with_row):
+    r = _cert(session, users["operator"], users["student"], status=status, with_row=with_row)
     for email in ("al@itba.test", "op@itba.test"):
         resp = client.get(f"/api/certificates/{r.id}/pdf", headers=_auth(client, email))
         assert resp.status_code == 404
@@ -136,3 +140,28 @@ def test_operator_token_on_me_certificates_403(client, users):
 def test_no_token_401(client, users):
     assert client.get("/api/me/certificates").status_code == 401
     assert client.get(f"/api/certificates/{uuid.uuid4()}/pdf").status_code == 401
+
+
+def test_all_404_bodies_identical(client, users, session):
+    op, st = users["operator"], users["student"]
+    inst2 = Institution(name="Otra")
+    session.add(inst2)
+    session.flush()
+    session.add(User(institution_id=inst2.id, email="op2@x.test", name="Op2",
+                     password_hash=users["operator"].password_hash, role="operator"))
+    session.flush()
+    other = _cert(session, op, _other_student(session, users))
+    mine = _cert(session, op, st)
+    failed = _cert(session, op, st, status=RequestStatus.FAILED, course="f")
+    proc = _cert(session, op, st, status=RequestStatus.PROCESSING, course="p")
+    cases = [
+        ("al@itba.test", other.id), ("op2@x.test", mine.id), ("al@itba.test", failed.id),
+        ("op@itba.test", proc.id), ("al@itba.test", uuid.uuid4()),
+    ]
+    bodies = []
+    for email, cid in cases:
+        r = client.get(f"/api/certificates/{cid}/pdf", headers=_auth(client, email))
+        assert r.status_code == 404
+        bodies.append(r.json())
+    assert all(b == bodies[0] for b in bodies)
+    assert bodies[0]["error"]["code"] == "NOT_FOUND"
