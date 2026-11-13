@@ -22,6 +22,10 @@ _bearer = HTTPBearer(auto_error=False, description="JWT obtenido en POST /api/au
 # Hash fijo para igualar el tiempo de respuesta cuando el email no existe.
 _DUMMY_HASH = bcrypt.hashpw(b"dummy", bcrypt.gensalt()).decode()
 
+def hash_password(password: str, rounds: int = 12) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=rounds)).decode()
+
+
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
