@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     max_attempts: int = 3
     retry_delay_seconds: int = 5
     fault_injection: str = ""
+    init_timeout_seconds: int = 60
+    bcrypt_rounds: int = 12
 
 
 def get_settings() -> Settings:
