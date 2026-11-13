@@ -1,6 +1,7 @@
 """Aceptar un lote: una sola transacción con batch + cert_requests + outbox."""
 import datetime as dt
 import hashlib
+import logging
 import uuid
 from dataclasses import dataclass
 
@@ -15,6 +16,7 @@ from app.domain.normalize import course_key as make_course_key
 from app.domain.normalize import normalize_email
 from app.infrastructure.models import Batch, CertRequest, Outbox, RequestStatus, User
 
+log = logging.getLogger(__name__)
 UQ_BATCH_KEY = "uq_batches_operator_key"
 UQ_BUSINESS = "uq_cert_requests_student_course_date"
 
@@ -124,4 +126,7 @@ def accept_batch(
             if issues:
                 raise _validation_error(issues) from None
         raise
+    for o in outbox:
+        log.info("lote aceptado: batch_id=%s request_id=%s correlation_id=%s",
+                 batch.id, o.request_id, o.correlation_id)
     return AcceptResult(batch.id, "IN_PROGRESS", len(reqs), replayed=False)

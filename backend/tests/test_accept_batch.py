@@ -1,4 +1,5 @@
 import datetime as dt
+import logging
 import threading
 import uuid
 
@@ -145,6 +146,18 @@ def test_each_request_gets_its_own_correlation_id(client, session, users, studen
     _post(client, _token(client), _csv(10))
     ids = session.scalars(select(Outbox.correlation_id)).all()
     assert len(ids) == 10 and len(set(ids)) == 10
+
+
+def test_accept_logs_one_info_line_per_request_with_correlation_id(client, session, users, students, caplog):
+    caplog.set_level(logging.INFO, logger="app.application.accept_batch")
+    r = _post(client, _token(client), _csv(3))
+    batch_id = r.json()["batch_id"]
+    rows = session.execute(select(Outbox.request_id, Outbox.correlation_id)).all()
+    recs = [x for x in caplog.records if x.name == "app.application.accept_batch" and x.levelno == logging.INFO]
+    assert len(recs) == 3
+    for rid, cid in rows:
+        (msg,) = [x.getMessage() for x in recs if f"correlation_id={cid}" in x.getMessage()]
+        assert f"batch_id={batch_id}" in msg and f"request_id={rid}" in msg
 
 
 @pytest.mark.parametrize("csv", [b"", b"nombre\nx\n", b"email\n", b"\xff\xfe\x00bad"])
