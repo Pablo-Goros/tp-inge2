@@ -12,6 +12,7 @@ import pytest
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
+from tests._safety import require_test_db, require_test_broker
 from app.application.publish_outbox import publish_pending
 from app.infrastructure.broker import connect, declare_topology
 from app.infrastructure.models import Batch, CertRequest, Institution, Outbox, User
@@ -27,6 +28,7 @@ def _purge(ch):
 
 @pytest.fixture
 def channel():
+    require_test_broker()
     conn = connect(os.environ["RABBITMQ_URL"])
     ch = conn.channel()
     declare_topology(ch)
@@ -68,6 +70,8 @@ def make_outbox(session, n):
 @pytest.fixture
 def committed(engine):
     """Filas realmente commiteadas (para tests con varias conexiones); se limpian al final."""
+    require_test_db()
+
     def clean():
         with engine.begin() as conn:
             conn.execute(text("TRUNCATE outbox, cert_requests, batches, users, institutions CASCADE"))
@@ -180,6 +184,7 @@ def test_two_publishers_do_not_double_publish_same_row(engine, committed, channe
 def test_broker_down_leaves_rows_pending_and_recovers(engine, committed):
     from app.entrypoints.publisher import run
 
+    require_test_broker()
     conn = connect(os.environ["RABBITMQ_URL"])
     declare_topology(conn.channel())
     _purge(conn.channel())

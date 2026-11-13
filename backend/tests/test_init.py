@@ -7,6 +7,7 @@ import pika
 import pytest
 from sqlalchemy import text
 
+from tests._safety import require_test_db
 from tests.conftest import BACKEND_DIR
 
 QUEUES = ["cert.issue", "cert.issue.wait", "cert.issue.dlq"]
@@ -15,6 +16,7 @@ QUEUES = ["cert.issue", "cert.issue.wait", "cert.issue.dlq"]
 @pytest.fixture
 def fresh_db(engine):
     """Esquema vacío para ejercitar init desde cero; al final deja tablas migradas y vacías."""
+    require_test_db()
     with engine.begin() as conn:
         conn.execute(text("DROP SCHEMA public CASCADE"))
         conn.execute(text("CREATE SCHEMA public"))

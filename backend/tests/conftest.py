@@ -6,6 +6,9 @@ from alembic.config import Config
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
+from tests._safety import require_test_broker, require_test_db
+
+os.environ.setdefault("JWT_SECRET", "test-secret-test-secret-test-secret-0123456789")
 os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://certs:certs@localhost:55432/certs")
 os.environ.setdefault("RABBITMQ_URL", "amqp://guest:guest@localhost:55672/%2F")
 
@@ -14,6 +17,7 @@ BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 @pytest.fixture(scope="session")
 def engine():
+    require_test_db()
     eng = create_engine(os.environ["DATABASE_URL"])
     with eng.begin() as conn:
         conn.execute(text("DROP SCHEMA public CASCADE"))
@@ -64,3 +68,12 @@ def users(session):
     session.add_all([op, st])
     session.flush()
     return {"operator": op, "student": st}
+
+
+@pytest.fixture
+def clear_settings_cache():
+    from app.config import get_settings
+
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()

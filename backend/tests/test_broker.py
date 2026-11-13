@@ -2,11 +2,13 @@ import os
 
 import pytest
 
+from tests._safety import require_test_broker
 from app.infrastructure.broker import connect, declare_topology
 
 
 @pytest.fixture
 def channel():
+    require_test_broker()
     conn = connect(os.environ["RABBITMQ_URL"])
     ch = conn.channel()
     for q in ("cert.issue", "cert.issue.wait", "cert.issue.dlq"):
