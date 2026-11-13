@@ -7,8 +7,7 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from app.api.auth import current_user, require_role
 from app.api.errors import ApiError
 from app.api.schemas import (
-    BatchDetail, BatchSummary, ErrorResponse, MyCertificate,
-    VerifyFileResponse, VerifyResponse,
+    ErrorResponse, MyCertificate, VerifyFileResponse, VerifyResponse,
 )
 
 router = APIRouter(responses={501: {"model": ErrorResponse, "description": "Aún no implementado"}})
@@ -22,18 +21,6 @@ _AUTH = {401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}}
 _PUBLIC = {404: {"model": ErrorResponse}, 503: {"model": ErrorResponse}}
 _operator = Depends(require_role("operator"))
 _student = Depends(require_role("student"))
-
-
-@router.get("/batches", tags=["batches"], dependencies=[_operator],
-            response_model=list[BatchSummary], responses=_AUTH)
-def list_batches():
-    _todo()
-
-
-@router.get("/batches/{batch_id}", tags=["batches"], dependencies=[_operator],
-            response_model=BatchDetail, responses={**_AUTH, 404: {"model": ErrorResponse}})
-def get_batch(batch_id: uuid.UUID):
-    _todo()
 
 
 @router.get("/me/certificates", tags=["certificates"], dependencies=[_student],

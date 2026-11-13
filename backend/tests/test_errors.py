@@ -52,7 +52,7 @@ def test_openapi_has_no_422_and_documents_400_and_501():
     assert "HTTPValidationError" not in spec["components"]["schemas"]
     login = spec["paths"]["/api/auth/login"]["post"]["responses"]
     assert "400" in login and "401" in login
-    assert "501" in spec["paths"]["/api/batches"]["get"]["responses"]
+    assert "501" in spec["paths"]["/api/me/certificates"]["get"]["responses"]
     pdf = spec["paths"]["/api/certificates/{cert_id}/pdf"]["get"]["responses"]["200"]["content"]
     assert list(pdf) == ["application/pdf"]
     post = spec["paths"]["/api/batches"]["post"]["responses"]

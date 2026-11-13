@@ -26,18 +26,19 @@ class BatchCreated(BaseModel):
     total: int
 
 
-class BatchSummary(BatchCreated):
-    course_name: str
-    completion_date: dt.date
-    created_at: dt.datetime
-
-
 class BatchCounts(BaseModel):
     total: int
     pending: int
     processing: int
     issued: int
     failed: int
+
+
+class BatchSummary(BatchCreated):
+    course_name: str
+    completion_date: dt.date
+    created_at: dt.datetime
+    counts: BatchCounts
 
 
 class BatchItem(BaseModel):

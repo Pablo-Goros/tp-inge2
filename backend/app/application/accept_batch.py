@@ -9,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.errors import ApiError
+from app.application.batch_status import counts_for_batches, derive_batch_status
 from app.domain.csv_validation import CsvFormatError, RowIssue, parse_csv, validate_rows
 from app.domain.normalize import course_key as make_course_key
 from app.domain.normalize import normalize_email
@@ -39,16 +40,6 @@ def _validation_error(issues: list[RowIssue]) -> ApiError:
                     [{"row": i.row, "email": i.email, "reason": i.reason} for i in issues])
 
 
-def _batch_status(session: Session, batch_id: uuid.UUID) -> tuple[str, int]:
-    rows = dict(session.execute(
-        select(CertRequest.status, func.count()).where(CertRequest.batch_id == batch_id).group_by(CertRequest.status)
-    ).all())
-    total = sum(rows.values())
-    if rows.get("PENDING") or rows.get("PROCESSING"):
-        return "IN_PROGRESS", total
-    return ("COMPLETED_WITH_ERRORS" if rows.get("FAILED") else "COMPLETED"), total
-
-
 def _existing_batch(session: Session, operator_id: uuid.UUID, key: str) -> Batch | None:
     return session.scalar(select(Batch).where(Batch.operator_id == operator_id, Batch.idempotency_key == key))
 
@@ -56,8 +47,8 @@ def _existing_batch(session: Session, operator_id: uuid.UUID, key: str) -> Batch
 def _replay_or_conflict(session: Session, existing: Batch, fp: str) -> AcceptResult:
     if existing.request_fingerprint != fp:
         raise ApiError(409, "IDEMPOTENCY_CONFLICT", "La Idempotency-Key ya se usó con otro contenido")
-    status, total = _batch_status(session, existing.id)
-    return AcceptResult(existing.id, status, total, replayed=True)
+    counts = counts_for_batches(session, [existing.id])[existing.id]
+    return AcceptResult(existing.id, derive_batch_status(counts), counts.total, replayed=True)
 
 
 def _issues(session, institution_id, emails, ckey, completion_date) -> tuple[list[RowIssue], dict]:

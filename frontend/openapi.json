@@ -178,16 +178,6 @@
               }
             }
           },
-          "501": {
-            "description": "Aún no implementado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "401": {
             "content": {
               "application/json": {
@@ -242,16 +232,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BatchDetail"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Aún no implementado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -796,6 +776,9 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/BatchCounts"
           }
         },
         "type": "object",
@@ -805,7 +788,8 @@
           "total",
           "course_name",
           "completion_date",
-          "created_at"
+          "created_at",
+          "counts"
         ],
         "title": "BatchSummary"
       },
