@@ -45,7 +45,10 @@ docs/
 | `PUBLIC_BASE_URL` | Base de la URL del QR, p. ej. `http://localhost:8080`. **Fijar antes de emitir el lote de demo**: cambiarla altera el PDF |
 | `REGISTRY_BACKEND` | `simulated` (por defecto) o `chain` (tarea extra) |
 | `MAX_ATTEMPTS` | Reintentos por certificado, por defecto `3` |
-| `RETRY_DELAY_SECONDS` | Espera entre reintentos, por defecto `5` |
+| `RETRY_DELAY_SECONDS` | Espera entre reintentos, por defecto `5`. Cambiarlo con el broker ya inicializado exige recrear la cola `cert.issue.wait` (RabbitMQ rechaza redeclarar con otro TTL) |
+| `POLL_INTERVAL_SECONDS` | Espera del publicador cuando no hay filas pendientes, por defecto `1.0` |
+| `INIT_TIMEOUT_SECONDS` | Plazo total de `init` para alcanzar PostgreSQL y RabbitMQ, por defecto `60` |
+| `BCRYPT_ROUNDS` | Costo de bcrypt al sembrar cuentas, por defecto `12` (las pruebas usan `4`) |
 | `FAULT_INJECTION` | Lista de fallos controlados para la demo (ver §8); vacía por defecto |
 
 ## 2. Autenticación y roles
