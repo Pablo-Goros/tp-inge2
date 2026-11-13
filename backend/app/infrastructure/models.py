@@ -3,8 +3,8 @@ import enum
 import uuid
 
 from sqlalchemy import (
-    CheckConstraint, Date, DateTime, ForeignKey, Integer, LargeBinary, Text,
-    UniqueConstraint, func,
+    CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, LargeBinary, Text,
+    UniqueConstraint, func, text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -84,6 +84,10 @@ class CertRequest(Base):
 
 class Outbox(Base):
     __tablename__ = "outbox"
+    __table_args__ = (
+        UniqueConstraint("request_id", name="uq_outbox_request_id"),
+        Index("ix_outbox_unpublished", "published_at", postgresql_where=text("published_at IS NULL")),
+    )
     id: Mapped[uuid.UUID] = _uuid_pk()
     request_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("cert_requests.id"))
     correlation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), default=uuid.uuid4)

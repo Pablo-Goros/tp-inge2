@@ -100,16 +100,6 @@
               }
             }
           },
-          "501": {
-            "description": "Aún no implementado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "401": {
             "content": {
               "application/json": {

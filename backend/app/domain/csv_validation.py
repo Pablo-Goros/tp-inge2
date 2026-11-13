@@ -31,7 +31,10 @@ def parse_csv(data: bytes) -> list[str]:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError:
         raise CsvFormatError("INVALID_ENCODING") from None
-    rows = list(csv.reader(io.StringIO(text, newline="")))
+    try:
+        rows = list(csv.reader(io.StringIO(text, newline="")))
+    except csv.Error:
+        raise CsvFormatError("MALFORMED_CSV") from None
     rows = [r for r in rows if any(c.strip() for c in r)]
     if not rows:
         raise CsvFormatError("EMPTY_FILE")

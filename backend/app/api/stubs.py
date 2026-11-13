@@ -1,14 +1,13 @@
 """Rutas declaradas para completar el contrato OpenAPI; las Tareas 5-9 las reemplazan."""
-import datetime as dt
 import uuid
 
 from fastapi.responses import Response
-from fastapi import APIRouter, Depends, File, Form, Header, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 
 from app.api.auth import current_user, require_role
 from app.api.errors import ApiError
 from app.api.schemas import (
-    BatchCreated, BatchDetail, BatchSummary, ErrorResponse, MyCertificate,
+    BatchDetail, BatchSummary, ErrorResponse, MyCertificate,
     VerifyFileResponse, VerifyResponse,
 )
 
@@ -23,21 +22,6 @@ _AUTH = {401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}}
 _PUBLIC = {404: {"model": ErrorResponse}, 503: {"model": ErrorResponse}}
 _operator = Depends(require_role("operator"))
 _student = Depends(require_role("student"))
-
-
-@router.post(
-    "/batches", status_code=201, tags=["batches"], dependencies=[_operator],
-    response_model=BatchCreated,
-    responses={**_AUTH, 200: {"model": BatchCreated, "description": "Reintento idempotente: devuelve el lote original"}, 400: {"model": ErrorResponse},
-               409: {"model": ErrorResponse}},
-)
-def create_batch(
-    course_name: str = Form(min_length=1, max_length=200),
-    completion_date: dt.date = Form(),
-    file: UploadFile = File(),
-    idempotency_key: str = Header(alias="Idempotency-Key"),
-):
-    _todo()
 
 
 @router.get("/batches", tags=["batches"], dependencies=[_operator],

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, FastAPI
 from fastapi.openapi.utils import get_openapi
 
-from app.api import auth, stubs
+from app.api import auth, batches, stubs
 from app.api.errors import install_error_handlers
 
 
@@ -10,6 +10,7 @@ def create_app() -> FastAPI:
     install_error_handlers(app)
     api = APIRouter(prefix="/api")
     api.include_router(auth.router)
+    api.include_router(batches.router)
     api.include_router(stubs.router)
     app.include_router(api)
     app.openapi = lambda: _openapi(app)
