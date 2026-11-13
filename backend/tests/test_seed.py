@@ -36,3 +36,15 @@ def test_seed_passwords_are_hashed_not_plaintext(session):
     u = session.scalar(select(User).where(User.email == "alumno01@demo.test"))
     assert u.password_hash != get_settings().demo_password
     assert bcrypt.checkpw(get_settings().demo_password.encode(), u.password_hash.encode())
+
+
+def test_seed_does_not_overwrite_existing_user(session):
+    inst = Institution(name="Otra")
+    session.add(inst)
+    session.flush()
+    session.add(User(institution_id=inst.id, email="alumno01@demo.test", name="Custom", password_hash="x", role="student"))
+    session.flush()
+    _seed(session)
+    session.expire_all()
+    u = session.scalar(select(User).where(User.email == "alumno01@demo.test"))
+    assert (u.name, u.password_hash, u.institution_id) == ("Custom", "x", inst.id)

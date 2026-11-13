@@ -14,6 +14,7 @@ from app.config import get_settings
 from app.infrastructure.broker import declare_topology
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
+INIT_LOCK_KEY = 420101  # clave fija del advisory lock de init
 SLEEP_SECONDS = 1
 ATTEMPT_TIMEOUT = 3  # segundos por intento de conexión
 
@@ -37,6 +38,14 @@ def _broker_connect(url: str) -> pika.BlockingConnection:
     return pika.BlockingConnection(params)
 
 
+def _migrate_and_seed(engine, bcrypt_rounds: int) -> None:
+    cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    cfg.set_main_option("script_location", str(BACKEND_DIR / "migrations"))
+    command.upgrade(cfg, "head")
+    with Session(engine) as session:
+        seed(session, bcrypt_rounds)
+
+
 def main() -> None:
     settings = get_settings()
     total = settings.init_timeout_seconds
@@ -48,11 +57,16 @@ def main() -> None:
             conn.execute(text("SELECT 1"))
 
     _retry("la base de datos (PostgreSQL)", ping_db, deadline, total)
-    cfg = Config(str(BACKEND_DIR / "alembic.ini"))
-    cfg.set_main_option("script_location", str(BACKEND_DIR / "migrations"))
-    command.upgrade(cfg, "head")
-    with Session(engine) as session:
-        seed(session, settings.bcrypt_rounds)
+    # Lock de sesión en conexión dedicada: serializa inits concurrentes (migrar + sembrar).
+    lock_conn = engine.connect().execution_options(isolation_level="AUTOCOMMIT")
+    try:
+        lock_conn.execute(text("SELECT pg_advisory_lock(:k)"), {"k": INIT_LOCK_KEY})
+        _migrate_and_seed(engine, settings.bcrypt_rounds)
+    finally:
+        try:
+            lock_conn.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": INIT_LOCK_KEY})
+        finally:
+            lock_conn.close()
     engine.dispose()
 
     conn = _retry("RabbitMQ", lambda: _broker_connect(settings.rabbitmq_url), deadline, total)
