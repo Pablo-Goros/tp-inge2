@@ -4,7 +4,7 @@ import uuid
 
 import bcrypt
 import pytest
-from sqlalchemy import func, select, text
+from sqlalchemy import event, func, select, text
 from sqlalchemy.orm import Session
 
 from app.api.errors import ApiError
@@ -212,7 +212,8 @@ def committed(engine):
         c.execute(text(f"TRUNCATE {_TABLES} CASCADE"))
 
 
-def _race(engine, op_id, keys):
+def _race(engine, op_id, keys, csvs=None):
+    csvs = csvs or [b"email\ncs@c.test\n"] * len(keys)
     barrier = threading.Barrier(len(keys))
     results = [None] * len(keys)
 
@@ -220,8 +221,8 @@ def _race(engine, op_id, keys):
         with Session(engine) as s:
             barrier.wait(timeout=10)
             try:
-                results[i] = accept_batch(s, op_id, "Curso", dt.date(2026, 10, 30), b"email\ncs@c.test\n", keys[i])
-            except ApiError as e:
+                results[i] = accept_batch(s, op_id, "Curso", dt.date(2026, 10, 30), csvs[i], keys[i])
+            except Exception as e:  # ApiError esperado; otro tipo (p. ej. deadlock) lo detecta el test
                 results[i] = e
 
     ts = [threading.Thread(target=run, args=(i,)) for i in range(len(keys))]
@@ -260,3 +261,57 @@ def test_concurrent_same_key_one_creates_other_replays(engine, committed):
         assert sorted(r.replayed for r in res) == [False, True]
         assert res[0].batch_id == res[1].batch_id
         assert _final_counts(engine) == (1, 1, 1)
+
+
+def test_concurrent_overlapping_reversed_order_no_deadlock(engine, committed):
+    n = 60  # filas suficientes para que las inserciones se solapen de verdad
+    with Session(engine) as s:
+        inst = s.scalar(select(User.institution_id).where(User.id == committed))
+        s.add_all([User(institution_id=inst, email=f"r{i}@c.test", name="R", password_hash="x", role="student")
+                   for i in range(n)])
+        s.commit()
+    emails = [f"r{i}@c.test" for i in range(n)]
+    a = "\n".join(["email", *emails, ""]).encode()
+    b = "\n".join(["email", *reversed(emails), ""]).encode()
+    # Sincroniza ambos hilos justo antes del INSERT de cert_requests para forzar el solapamiento.
+    gate = {"b": threading.Barrier(2)}
+
+    def _sync(conn, cursor, statement, params, context, executemany):
+        if statement.startswith("INSERT INTO cert_requests"):
+            try:
+                gate["b"].wait(timeout=5)
+            except threading.BrokenBarrierError:
+                pass
+
+    event.listen(engine, "before_cursor_execute", _sync)
+    try:
+        for _ in range(10):
+            gate["b"] = threading.Barrier(2)
+            with engine.begin() as c:
+                c.execute(text("TRUNCATE outbox, cert_requests, batches CASCADE"))
+            res = _race(engine, committed, ["ka", "kb"], [a, b])
+            assert not [r for r in res if isinstance(r, Exception) and not isinstance(r, ApiError)], res
+            wins = [r for r in res if not isinstance(r, ApiError)]
+            losses = [r for r in res if isinstance(r, ApiError)]
+            assert len(wins) == 1 and len(losses) == 1, res
+            assert losses[0].status == 400 and losses[0].code == "VALIDATION_ERROR"
+            assert {d["reason"] for d in losses[0].details} == {"ALREADY_REQUESTED"}
+            assert _final_counts(engine) == (1, n, n)
+    finally:
+        event.remove(engine, "before_cursor_execute", _sync)
+
+
+def test_idempotency_key_over_255_400(client, session, users, students):
+    before = _counts(session)
+    r = _post(client, _token(client), _csv(2), key="k" * 256)
+    assert r.status_code == 400 and r.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert _counts(session) == before
+    assert _post(client, _token(client), _csv(2), key="k" * 255).status_code == 201
+
+
+@pytest.mark.parametrize("d", ["0", "2026-13-40", "30/10/2026", "2026-10-30T00:00", "2026-1-3"])
+def test_completion_date_strict_format_400(client, session, users, students, d):
+    before = _counts(session)
+    r = _post(client, _token(client), _csv(2), date=d)
+    assert r.status_code == 400 and r.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert _counts(session) == before

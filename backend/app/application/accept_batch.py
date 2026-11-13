@@ -111,6 +111,8 @@ def accept_batch(
                     completion_date=completion_date, status=RequestStatus.PENDING)
         for e in emails
     ]
+    # Orden determinista de bloqueo en el índice único: evita deadlocks entre lotes solapados.
+    reqs.sort(key=lambda r: r.student_id)
     outbox = [Outbox(id=uuid.uuid4(), request_id=r.id, correlation_id=uuid.uuid4()) for r in reqs]
     try:
         session.add(batch)
