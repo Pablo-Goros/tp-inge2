@@ -1,6 +1,6 @@
 # Contratos entre frentes (Paso 0)
 
-Versión 1.0, 13/11/2026. **Aprobado** por el usuario el 13/11/2026; falta que los otros tres integrantes lo lean y confirmen. Es la fuente única para los frentes A (frontend), B (API/DB/publicación), C (worker/registro/verificación) y D (infra/documentos). Ver [división del trabajo](division-del-trabajo.md).
+Versión 1.1, 13/11/2026 (1.1: corrige el ruteo de reintento/DLQ en §4). **Aprobado** por el usuario el 13/11/2026; falta que los otros tres integrantes lo lean y confirmen. Es la fuente única para los frentes A (frontend), B (API/DB/publicación), C (worker/registro/verificación) y D (infra/documentos). Ver [división del trabajo](division-del-trabajo.md).
 
 Las decisiones marcadas **[Decisión propuesta]** son supuestos de quien redactó el documento; no fueron confirmadas por el equipo. Revisarlas antes de aprobar.
 
@@ -41,6 +41,7 @@ docs/
 | `DATABASE_URL` | PostgreSQL |
 | `RABBITMQ_URL` | AMQP |
 | `JWT_SECRET` | Firma de tokens |
+| `DEMO_PASSWORD` | Contraseña de las cuentas sembradas por `init` (valor de demo en `.env.example`; otra en cloud) |
 | `PUBLIC_BASE_URL` | Base de la URL del QR, p. ej. `http://localhost:8080`. **Fijar antes de emitir el lote de demo**: cambiarla altera el PDF |
 | `REGISTRY_BACKEND` | `simulated` (por defecto) o `chain` (tarea extra) |
 | `MAX_ATTEMPTS` | Reintentos por certificado, por defecto `3` |
@@ -66,7 +67,7 @@ Propiedad: B define y migra; C lee y escribe solo `cert_requests` (estado), `cer
 | `users` | `id`, `institution_id`, `email` (único, minúsculas), `name`, `password_hash`, `role` (`operator`/`student`) | Un operador y N alumnos precargados |
 | `batches` | `id`, `operator_id`, `course_name`, `completion_date` (date), `idempotency_key`, `request_fingerprint`, `created_at` | Único `(operator_id, idempotency_key)` |
 | `cert_requests` | `id` **= identificador del certificado**, `batch_id`, `student_id`, `course_key`, `completion_date`, `status`, `attempts` (int, 0), `last_error` (text, null), `created_at`, `updated_at` | Único `(student_id, course_key, completion_date)` |
-| `outbox` | `id`, `request_id`, `created_at`, `published_at` (null hasta confirmar) | Una fila por solicitud, creada en la misma transacción que el lote |
+| `outbox` | `id`, `request_id`, `correlation_id` (uuid), `created_at`, `published_at` (null hasta confirmar) | Una fila por solicitud, creada en la misma transacción que el lote |
 | `certificates` | `request_id` (PK, FK), `pdf` (bytea), `sha256` (text), `issued_at` | Bytes definitivos; se escriben una sola vez |
 | `registry` | `cert_id` (PK), `sha256`, `registered_at` | Registro simulado, solo inserción (ver §7) |
 
@@ -95,10 +96,10 @@ PENDING ──(worker toma)──► PROCESSING ──(éxito)──► ISSUED
 | Elemento | Nombre | Propiedades |
 | --- | --- | --- |
 | Exchange | `certs` | `direct`, durable |
-| Cola de trabajo | `cert.issue` | durable; ruta `issue`; `x-dead-letter-exchange=certs.retry`, ruta de reintento |
+| Cola de trabajo | `cert.issue` | durable; enlazada a `certs` con clave `issue`; `x-dead-letter-exchange=certs.retry`, `x-dead-letter-routing-key=wait` |
 | Exchange de reintento | `certs.retry` | `direct`, durable |
-| Cola de espera | `cert.issue.wait` | durable; `x-message-ttl = RETRY_DELAY_SECONDS*1000`; al vencer vuelve a `certs` con ruta `issue` |
-| Cola de fallidos | `cert.issue.dlq` | durable; recibe los rechazados definitivamente |
+| Cola de espera | `cert.issue.wait` | durable; enlazada a `certs.retry` con clave `wait`; `x-message-ttl = RETRY_DELAY_SECONDS*1000`; `x-dead-letter-exchange=certs`, `x-dead-letter-routing-key=issue` (al vencer vuelve a la cola de trabajo) |
+| Cola de fallidos | `cert.issue.dlq` | durable; enlazada a `certs` con clave `dlq`; solo la alimenta el worker de forma explícita |
 
 **[Decisión propuesta]** El reintento se implementa con la cola de espera con TTL; no se usa `requeue` inmediato.
 
@@ -120,7 +121,7 @@ PENDING ──(worker toma)──► PROCESSING ──(éxito)──► ISSUED
 3. Si ya existe `certificates` para el id, reutilizar esos bytes y hash; si no, generar PDF+QR **una sola vez** y guardar `pdf` y `sha256`.
 4. `registry.register(cert_id, sha256)` (idempotente, ver §7).
 5. Marcar `ISSUED` y hacer ACK. El ACK es siempre el último paso.
-6. Falla transitoria con `attempts < MAX_ATTEMPTS`: volver a `PENDING`, `nack(requeue=false)` hacia la cola de espera. Falla permanente o intentos agotados: marcar `FAILED` con `last_error`, `nack(requeue=false)` hacia `cert.issue.dlq`. El error queda en la base aunque falle el traslado a la DLQ.
+6. Falla transitoria con `attempts < MAX_ATTEMPTS`: volver a `PENDING` y `nack(requeue=false)`; el dead-letter lo lleva a la cola de espera y de vuelta a la cola de trabajo. Falla permanente o intentos agotados: marcar `FAILED` con `last_error`, **publicar el mensaje a `certs` con clave `dlq` y luego hacer ACK** (un `nack` no podría distinguir destino: la cola de trabajo tiene un único dead-letter exchange). El error queda en la base aunque falle la publicación a la DLQ.
 7. Tras cualquier caída del worker, el broker reentrega y el paso 1 o 3 evita duplicar.
 
 **Qué es transitorio / permanente [Decisión propuesta]:** transitorio = error de conexión a PostgreSQL o al registro; permanente = datos inválidos, excepción de generación de PDF, o fallo controlado `permanent` de la inyección de fallos.
