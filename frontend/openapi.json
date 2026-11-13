@@ -301,16 +301,6 @@
               }
             }
           },
-          "501": {
-            "description": "Aún no implementado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "401": {
             "description": "Unauthorized",
             "content": {
@@ -368,16 +358,6 @@
             "description": "PDF",
             "content": {
               "application/pdf": {}
-            }
-          },
-          "501": {
-            "description": "Aún no implementado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
             }
           },
           "401": {

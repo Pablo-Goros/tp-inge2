@@ -1,13 +1,11 @@
 """Rutas declaradas para completar el contrato OpenAPI; las Tareas 5-9 las reemplazan."""
 import uuid
 
-from fastapi.responses import Response
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, File, UploadFile
 
-from app.api.auth import current_user, require_role
 from app.api.errors import ApiError
 from app.api.schemas import (
-    ErrorResponse, MyCertificate, VerifyFileResponse, VerifyResponse,
+    ErrorResponse, VerifyFileResponse, VerifyResponse,
 )
 
 router = APIRouter(responses={501: {"model": ErrorResponse, "description": "Aún no implementado"}})
@@ -17,27 +15,7 @@ def _todo():
     raise ApiError(501, "UNAVAILABLE", "No implementado todavía")
 
 
-_AUTH = {401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}}
 _PUBLIC = {404: {"model": ErrorResponse}, 503: {"model": ErrorResponse}}
-_operator = Depends(require_role("operator"))
-_student = Depends(require_role("student"))
-
-
-@router.get("/me/certificates", tags=["certificates"], dependencies=[_student],
-            response_model=list[MyCertificate], responses=_AUTH)
-def my_certificates():
-    _todo()
-
-
-@router.get(
-    "/certificates/{cert_id}/pdf", tags=["certificates"], dependencies=[Depends(current_user)],
-    response_class=Response,
-    responses={**_AUTH, 404: {"model": ErrorResponse},
-               200: {"content": {"application/pdf": {}}, "description": "PDF"}},
-)
-def certificate_pdf(cert_id: uuid.UUID):
-    # Task 7 agrega la regla: alumno dueño u operator.
-    _todo()
 
 
 @router.get("/verify/{cert_id}", tags=["verify"], response_model=VerifyResponse, responses=_PUBLIC)

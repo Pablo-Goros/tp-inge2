@@ -44,7 +44,7 @@ def test_student_token_on_operator_route_403(client, users):
 
 def test_operator_token_reaches_stub_501(client, users):
     token = login(client, "al@itba.test").json()["access_token"]
-    r = client.get("/api/me/certificates", headers={"Authorization": f"Bearer {token}"})
+    r = client.get(f"/api/verify/{uuid.uuid4()}", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 501
 
 
@@ -119,7 +119,7 @@ def test_login_malformed_stored_hash_401(client, users, session):
 
 def test_stub_501_has_envelope(client, users):
     token = login(client, "al@itba.test").json()["access_token"]
-    r = client.get("/api/me/certificates", headers={"Authorization": f"Bearer {token}"})
+    r = client.get(f"/api/verify/{uuid.uuid4()}", headers={"Authorization": f"Bearer {token}"})
     assert r.json()["error"]["code"] == "UNAVAILABLE"
 
 
