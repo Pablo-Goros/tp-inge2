@@ -142,6 +142,8 @@ Prefijo `/api`. JSON salvo donde se indica. Errores con formato único:
 | 404 | `NOT_FOUND` | Recurso inexistente (o ajeno, para no filtrar existencia) |
 | 409 | `IDEMPOTENCY_CONFLICT` | Misma `Idempotency-Key` con contenido distinto |
 | 503 | `UNAVAILABLE` | Dependencia no disponible |
+| (otro 4xx/5xx HTTP) | `HTTP_ERROR` | Error HTTP no listado (p. ej. 405); conserva el estado original |
+| 500 | `INTERNAL_ERROR` | Excepción no controlada; mensaje genérico, sin detalles internos |
 
 ### Endpoints
 

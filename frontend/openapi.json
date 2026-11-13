@@ -33,12 +33,22 @@
               }
             }
           },
-          "422": {
-            "description": "Validation Error",
+          "400": {
+            "description": "Bad Request",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -90,6 +100,16 @@
               }
             }
           },
+          "501": {
+            "description": "Aún no implementado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "content": {
               "application/json": {
@@ -111,14 +131,14 @@
             "description": "Forbidden"
           },
           "200": {
+            "description": "Reintento idempotente: devuelve el lote original",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BatchCreated"
                 }
               }
-            },
-            "description": "OK"
+            }
           },
           "400": {
             "content": {
@@ -139,16 +159,6 @@
               }
             },
             "description": "Conflict"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
           }
         }
       },
@@ -174,6 +184,16 @@
                     "$ref": "#/components/schemas/BatchSummary"
                   },
                   "title": "Response List Batches Api Batches Get"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Aún no implementado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -236,6 +256,16 @@
               }
             }
           },
+          "501": {
+            "description": "Aún no implementado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "401": {
             "content": {
               "application/json": {
@@ -266,12 +296,12 @@
             },
             "description": "Not Found"
           },
-          "422": {
-            "description": "Validation Error",
+          "400": {
+            "description": "VALIDATION_ERROR",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -297,6 +327,16 @@
                   },
                   "type": "array",
                   "title": "Response My Certificates Api Me Certificates Get"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Aún no implementado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -357,10 +397,17 @@
           "200": {
             "description": "PDF",
             "content": {
-              "application/json": {
-                "schema": {}
-              },
               "application/pdf": {}
+            }
+          },
+          "501": {
+            "description": "Aún no implementado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
             }
           },
           "401": {
@@ -393,12 +440,12 @@
             },
             "description": "Not Found"
           },
-          "422": {
-            "description": "Validation Error",
+          "400": {
+            "description": "VALIDATION_ERROR",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -436,6 +483,16 @@
               }
             }
           },
+          "501": {
+            "description": "Aún no implementado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "content": {
               "application/json": {
@@ -456,12 +513,12 @@
             },
             "description": "Service Unavailable"
           },
-          "422": {
-            "description": "Validation Error",
+          "400": {
+            "description": "VALIDATION_ERROR",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -509,6 +566,16 @@
               }
             }
           },
+          "501": {
+            "description": "Aún no implementado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
           "404": {
             "content": {
               "application/json": {
@@ -538,16 +605,6 @@
               }
             },
             "description": "Bad Request"
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
           }
         }
       }
@@ -847,19 +904,6 @@
         ],
         "title": "ErrorResponse"
       },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
       "LoginRequest": {
         "properties": {
           "email": {
@@ -931,46 +975,6 @@
           "issued_at"
         ],
         "title": "MyCertificate"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Location"
-          },
-          "msg": {
-            "type": "string",
-            "title": "Message"
-          },
-          "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
-          }
-        },
-        "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError"
       },
       "VerifyFileResponse": {
         "properties": {

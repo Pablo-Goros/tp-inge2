@@ -2,6 +2,7 @@
 import datetime as dt
 import uuid
 
+from fastapi.responses import Response
 from fastapi import APIRouter, Depends, File, Form, Header, UploadFile
 
 from app.api.auth import current_user, require_role
@@ -11,7 +12,7 @@ from app.api.schemas import (
     VerifyFileResponse, VerifyResponse,
 )
 
-router = APIRouter()
+router = APIRouter(responses={501: {"model": ErrorResponse, "description": "Aún no implementado"}})
 
 
 def _todo():
@@ -27,7 +28,7 @@ _student = Depends(require_role("student"))
 @router.post(
     "/batches", status_code=201, tags=["batches"], dependencies=[_operator],
     response_model=BatchCreated,
-    responses={**_AUTH, 200: {"model": BatchCreated}, 400: {"model": ErrorResponse},
+    responses={**_AUTH, 200: {"model": BatchCreated, "description": "Reintento idempotente: devuelve el lote original"}, 400: {"model": ErrorResponse},
                409: {"model": ErrorResponse}},
 )
 def create_batch(
@@ -59,6 +60,7 @@ def my_certificates():
 
 @router.get(
     "/certificates/{cert_id}/pdf", tags=["certificates"], dependencies=[Depends(current_user)],
+    response_class=Response,
     responses={**_AUTH, 404: {"model": ErrorResponse},
                200: {"content": {"application/pdf": {}}, "description": "PDF"}},
 )
