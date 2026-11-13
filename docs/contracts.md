@@ -151,7 +151,7 @@ Prefijo `/api`. JSON salvo donde se indica. Errores con formato único:
 | --- | --- | --- |
 | `POST /auth/login` | público | Ver §2 |
 | `POST /batches` | operator | Aceptar un lote |
-| `GET /batches` | operator | Listar lotes propios, más recientes primero |
+| `GET /batches` | operator | Listar lotes propios, más recientes primero (máx. 100). Cada elemento: `{ batch_id, course_name, completion_date, status, total, counts{pending,processing,issued,failed}, created_at }` |
 | `GET /batches/{id}` | operator | Avance y detalle por alumno |
 | `GET /me/certificates` | student | Listar certificados propios `ISSUED` |
 | `GET /certificates/{id}/pdf` | student dueño u operator | Descargar PDF |
