@@ -24,6 +24,9 @@ DEMO_PASSWORD="${DEMO_PASSWORD:-demo1234}"
 OPERATOR_EMAIL="operador@demo.test"
 EXIT_PENDING=77
 _PENDING=0
+_RESTORE=()          # servicios a volver a prender al salir
+_RESTORE_FAULT=0     # 1 = recrear el worker sin FAULT_INJECTION al salir
+WORKDIR="$(mktemp -d)"   # archivos temporales del escenario
 
 # ---------- evidencia y resultado ----------
 
@@ -49,6 +52,10 @@ _scenario_end() {
   for s in "${_RESTORE[@]+"${_RESTORE[@]}"}"; do   # vuelve a prender lo que el escenario apagó
     docker compose start "$s" >/dev/null 2>&1 || true
   done
+  if [[ "$_RESTORE_FAULT" == 1 ]]; then
+    FAULT_INJECTION= docker compose up -d --no-deps worker >/dev/null 2>&1 || true
+  fi
+  rm -rf "$WORKDIR"
   if [[ "$_PENDING" == 1 ]]; then echo "== PENDIENTE $SCENARIO"
   elif [[ "$1" == 0 ]]; then echo "== PASS $SCENARIO"
   else echo "== FAIL $SCENARIO (código $1)"
@@ -80,6 +87,20 @@ new_key() { uuidgen 2>/dev/null | tr 'A-Z' 'a-z' || cat /proc/sys/kernel/random/
 # la regla "mismo alumno + curso + fecha ya pedido".
 unique_course() { echo "Escenario $1 $(date +%s)-$RANDOM"; }
 
+# csv_of <email>...: arma un CSV temporal con esos emails e imprime su ruta.
+csv_of() {
+  local f="$WORKDIR/lote-$RANDOM.csv" e
+  echo email > "$f"
+  for e in "$@"; do echo "$e" >> "$f"; done
+  echo "$f"
+}
+
+# now_ms: milisegundos desde epoch (precisión de segundos si la shell no tiene EPOCHREALTIME).
+now_ms() {
+  if [[ -n "${EPOCHREALTIME:-}" ]]; then local t="${EPOCHREALTIME/,/.}"; echo $(( ${t%.*} * 1000 + 10#${t#*.} / 1000 ))
+  else echo $(( $(date +%s) * 1000 )); fi
+}
+
 sql() {
   docker compose exec -T postgres \
     psql -U "${POSTGRES_USER:-certs}" -d "${POSTGRES_DB:-certs}" -tAqc "$1"
@@ -89,28 +110,42 @@ container_id() { docker compose ps -aq "$1"; }
 
 # ---------- detener y recuperar servicios ----------
 
-_RESTORE=()
-
-# stop_service <servicio>: lo detiene, comprueba que de verdad quedó detenido y lo
-# anota para volver a prenderlo al salir aunque el escenario falle a mitad.
+# stop_service <servicio> [kill]: lo detiene (con `kill`, de forma abrupta, como una caída),
+# comprueba que de verdad quedó detenido y lo anota para volver a prenderlo al salir.
 stop_service() {
   _RESTORE+=("$1")
-  docker compose stop "$1" >/dev/null 2>&1
+  if [[ "${2:-}" == kill ]]; then docker compose kill "$1" >/dev/null 2>&1
+  else docker compose stop "$1" >/dev/null 2>&1; fi
   assert_eq false "$(docker inspect -f '{{.State.Running}}' "$(container_id "$1")")" "$1 corriendo"
 }
 
 # start_service <servicio> [timeout_s]: lo prende y espera a que esté sano (o corriendo, si
 # no tiene healthcheck).
 start_service() {
-  local deadline=$((SECONDS + ${2:-90})) st
   docker compose start "$1" >/dev/null 2>&1
+  wait_up "$1" "${2:-90}"
+}
+
+wait_up() {
+  local deadline=$((SECONDS + $2)) st
   while :; do
     st=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$(container_id "$1")")
     [[ "$st" == healthy || "$st" == running ]] && break
-    [[ $SECONDS -ge $deadline ]] && fail "$1 no quedó sano tras ${2:-90} s (estado: $st)"
+    [[ $SECONDS -ge $deadline ]] && fail "$1 no quedó sano tras $2 s (estado: $st)"
     sleep 1
   done
-  echo "   ok    $1 de nuevo arriba ($st)"
+  echo "   ok    $1 arriba ($st)"
+}
+
+# set_worker_fault <valor>: recrea el worker con FAULT_INJECTION=<valor> (contracts §8).
+# Al salir, el escenario lo vuelve a dejar sin fallas.
+set_worker_fault() {
+  _RESTORE_FAULT=1
+  FAULT_INJECTION="$1" docker compose up -d --no-deps worker >/dev/null 2>&1
+  assert_eq "FAULT_INJECTION=$1" \
+    "$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$(container_id worker)" | grep '^FAULT_INJECTION=')" \
+    "variable del worker"
+  wait_up worker 60
 }
 
 # ---------- HTTP ----------
@@ -166,35 +201,74 @@ wait_batch() {
   echo "$status"
 }
 
+# download_pdf <token> <cert_id> <archivo> -> código HTTP
+download_pdf() {
+  curl -sS -o "$3" -w '%{http_code}' "$API/certificates/$2/pdf" -H "Authorization: Bearer $1"
+}
+
+# verify_file <cert_id> <archivo>: POST público de verificación; deja HTTP_CODE/HTTP_BODY.
+verify_file() { http POST "/verify/$1/file" -F "file=@$2;type=application/pdf"; }
+
+# require_verify: PENDIENTE mientras la verificación responda 501 (no implementada).
+require_verify() {
+  http GET "/verify/$(new_key)"
+  [[ "$HTTP_CODE" != 501 ]] || pending "la verificación pública todavía responde 501 (frentes B y C)"
+}
+
 # ---------- base de datos ----------
 
 count_certs()    { sql "SELECT count(*) FROM certificates c JOIN cert_requests r ON r.id = c.request_id WHERE r.batch_id = '$1'"; }
 count_registry() { sql "SELECT count(*) FROM registry g JOIN cert_requests r ON r.id = g.cert_id WHERE r.batch_id = '$1'"; }
+count_status()   { sql "SELECT count(*) FROM cert_requests WHERE batch_id = '$1' AND status = '$2'"; }
+distinct_hashes(){ sql "SELECT count(DISTINCT c.sha256) FROM certificates c JOIN cert_requests r ON r.id = c.request_id WHERE r.batch_id = '$1'"; }
 
-# ---------- RabbitMQ (vía la API de la consola, solo en 127.0.0.1) ----------
-
-_rabbit_api() {
-  curl -sS -u "${RABBITMQ_USER:-certs}:${RABBITMQ_PASSWORD:-certs}" \
-    -H 'content-type: application/json' "$@"
+# wait_issued_at_least <batch_id> <n> <timeout_s>: sondeo rápido hasta que haya n ISSUED.
+wait_issued_at_least() {
+  local deadline=$((SECONDS + $3))
+  until [[ "$(count_status "$1" ISSUED)" -ge "$2" ]]; do
+    [[ $SECONDS -ge $deadline ]] && fail "no hubo $2 certificados emitidos tras $3 s"
+    sleep 0.2
+  done
 }
 
-# publish_issue <request_id>: reenvía a mano el mensaje de esa solicitud a cert.issue.
-# Imprime "true" si RabbitMQ lo ruteó a una cola.
+# wait_all_idle <timeout_s>: espera a que no quede ninguna solicitud PENDING/PROCESSING en
+# ningún lote, para que mensajes viejos no se mezclen con el escenario.
+wait_all_idle() {
+  local deadline=$((SECONDS + $1)) n
+  while :; do
+    n=$(sql "SELECT count(*) FROM cert_requests WHERE status IN ('PENDING', 'PROCESSING')")
+    [[ "$n" == 0 ]] && return 0
+    [[ $SECONDS -ge $deadline ]] && fail "quedan $n solicitudes sin terminar de corridas anteriores tras $1 s"
+    sleep 1
+  done
+}
+
+# ---------- RabbitMQ ----------
+
+# queue_len <cola>: mensajes listos + sin ACK (exacto, vía rabbitmqctl).
+queue_len() {
+  docker compose exec -T rabbitmq rabbitmqctl list_queues name messages -q \
+    | awk -v q="$1" '$1 == q { print $2 }'
+}
+
+# publish_issue <request_id>: reenvía a mano el mensaje de esa solicitud a cert.issue
+# (vía la API de la consola, solo en 127.0.0.1). Imprime "true" si se ruteó a una cola.
 publish_issue() {
   local corr payload
   corr=$(sql "SELECT correlation_id FROM outbox WHERE request_id = '$1'")
   payload=$(jq -nc --arg r "$1" --arg c "$corr" '{request_id:$r, correlation_id:$c}')
-  _rabbit_api -X POST "http://127.0.0.1:15672/api/exchanges/%2F/certs/publish" \
+  curl -sS -u "${RABBITMQ_USER:-certs}:${RABBITMQ_PASSWORD:-certs}" -H 'content-type: application/json' \
+    -X POST "http://127.0.0.1:15672/api/exchanges/%2F/certs/publish" \
     -d "$(jq -nc --arg p "$payload" \
       '{properties:{delivery_mode:2, content_type:"application/json"}, routing_key:"issue", payload:$p, payload_encoding:"string"}')" \
     | jq -r .routed
 }
 
-# wait_queue_empty <cola> <timeout_s>: espera a que no queden mensajes listos ni sin ACK.
+# wait_queue_empty <cola> <timeout_s>
 wait_queue_empty() {
   local deadline=$((SECONDS + $2)) n
   while :; do
-    n=$(_rabbit_api "http://127.0.0.1:15672/api/queues/%2F/$1" | jq '.messages_ready + .messages_unacknowledged')
+    n=$(queue_len "$1")
     [[ "$n" == 0 ]] && return 0
     [[ $SECONDS -ge $deadline ]] && fail "la cola $1 sigue con $n mensajes tras $2 s"
     sleep 1

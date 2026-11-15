@@ -1,0 +1,10 @@
+# 2026-11-15T02:51:19Z · commit ce3efd1 · http://localhost:8080
+== Escenario 09-alumno-permisos
+-- 1. Sin token no se accede a nada privado
+   ok    GET /me/certificates sin token = 401
+-- 2. El alumno no puede hacer acciones de operador
+   ok    GET /batches = 403
+   ok    GET /batches/{id} = 403
+   ok    POST /batches = 403
+   PENDIENTE: requiere el worker real (frente C); hoy compose.yaml usa un placeholder
+== PENDIENTE 09-alumno-permisos

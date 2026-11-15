@@ -120,23 +120,26 @@ Cada escenario es un script repetible: rompe algo de verdad (por ejemplo, detien
 
 ```bash
 docker compose up -d
-scripts/scenarios/03-broker-caido.sh
+scripts/run-all.sh                      # todos, con resumen en evidence/RESUMEN.txt
+scripts/scenarios/03-broker-caido.sh    # o uno solo
 ```
 
-Cada uno termina con `PASS` (código 0), `FAIL` (otro código) o `PENDIENTE` (código 77: falta una pieza de otro frente). Si falla a mitad de camino, vuelve a prender lo que había detenido.
+Cada uno termina con `PASS` (código 0), `FAIL` (otro código) o `PENDIENTE` (código 77: falta una pieza de otro frente). Si falla a mitad de camino, vuelve a prender lo que había detenido y saca la inyección de fallas del worker.
 
-| Script | Qué demuestra | Estado |
+| Script | Qué demuestra | Estado hoy |
 | --- | --- | --- |
-| `01-lote-20.sh` | Un lote de 20 termina con 20 certificados distintos y verificables | ⏳ por escribir (requiere worker) |
-| `02-worker-caido.sh` | Si se detiene el worker a mitad del lote, al volver termina sin duplicados | ⏳ por escribir (requiere worker) |
-| [03-broker-caido.sh](scripts/scenarios/03-broker-caido.sh) | Con RabbitMQ caído el lote se acepta, queda en el outbox y se publica al volver | ✅ hasta la publicación; la emisión final queda PENDIENTE |
-| [04-mensaje-repetido.sh](scripts/scenarios/04-mensaje-repetido.sh) | El mismo envío HTTP o el mismo mensaje dos veces no duplica nada | ✅ parte HTTP; la reentrega al worker queda PENDIENTE |
-| `05-transitorio.sh` | Una falla transitoria se reintenta y el lote termina | ⏳ por escribir (requiere worker) |
-| `06-permanente.sh` | Una falla permanente queda visible y los otros 19 se emiten | ⏳ por escribir (requiere worker) |
+| [01-lote-20.sh](scripts/scenarios/01-lote-20.sh) | Un lote de 20 termina con 20 certificados distintos, registrados y verificables; mide tiempos | PENDIENTE: worker y verificación |
+| [02-worker-caido.sh](scripts/scenarios/02-worker-caido.sh) | Si el worker muere (`kill`) a mitad del lote, al volver termina sin pérdidas ni duplicados | PENDIENTE: worker |
+| [03-broker-caido.sh](scripts/scenarios/03-broker-caido.sh) | Con RabbitMQ caído el lote se acepta, queda en el outbox y se publica al volver | ✅ hasta la publicación; la emisión final espera al worker |
+| [04-mensaje-repetido.sh](scripts/scenarios/04-mensaje-repetido.sh) | El mismo envío HTTP o el mismo mensaje dos veces no duplica nada | ✅ parte HTTP; la reentrega espera al worker |
+| [05-transitorio.sh](scripts/scenarios/05-transitorio.sh) | Con `FAULT_INJECTION=transient:2` hay reintentos y el lote termina completo | PENDIENTE: worker |
+| [06-permanente.sh](scripts/scenarios/06-permanente.sh) | Con `FAULT_INJECTION=permanent:alumno03@demo.test`: 19 emitidos, 1 `FAILED` con su error y en la DLQ | PENDIENTE: worker |
 | [07-csv-invalido.sh](scripts/scenarios/07-csv-invalido.sh) | Un CSV inválido se rechaza entero y no crea nada | ✅ PASS |
-| `08-verificacion.sh` | Original `VALID`, alterado `ALTERED`, inexistente `NOT_FOUND`, registro caído `503` | ⏳ por escribir (requiere worker y verificación) |
-| `09-alumno-permisos.sh` | El alumno solo ve lo suyo y la consulta pública no expone el email | ⏳ por escribir |
+| [08-verificacion.sh](scripts/scenarios/08-verificacion.sh) | Original `VALID`, alterado `ALTERED`, inexistente `NOT_FOUND`, registro caído `503` | PENDIENTE: worker y verificación |
+| [09-alumno-permisos.sh](scripts/scenarios/09-alumno-permisos.sh) | El alumno solo ve y descarga lo suyo, no hace acciones de operador, y la consulta pública no expone el email | ✅ permisos de operador; el resto espera al worker y la verificación |
 | [10-segundo-up.sh](scripts/scenarios/10-segundo-up.sh) | Volver a correr `docker compose up` no duplica datos ni colas | ✅ PASS |
+
+Los escenarios que esperan al worker se probaron contra un worker de prueba que sigue el contrato de [docs/contracts.md §4](docs/contracts.md); la evidencia en `evidence/` es solo de la aplicación real.
 
 Para correr los escenarios contra otra máquina, por ejemplo la VM: ejecutarlos **en esa máquina**, ya que detienen sus servicios. `BASE_URL` cambia la URL de la API.
 
@@ -153,7 +156,13 @@ Todas las variables, con su explicación, están en [.env.example](.env.example)
 
 ## Despliegue en la nube
 
-⏳ Pendiente. Se usará el mismo `compose.yaml` en una VM Linux; la URL y las credenciales de acceso se entregan a la cátedra por un canal privado (nunca en este repositorio).
+⏳ Pendiente la VM. Se usa el mismo `compose.yaml` en una VM Linux (Ubuntu), con el puerto 8080 abierto. Desde una máquina con el repositorio:
+
+```bash
+scripts/deploy.sh <usuario@ip> [clave-ssh.pem]
+```
+
+El script instala Docker si falta, copia el proyecto, crea la primera vez un `.env` con contraseñas aleatorias y `PUBLIC_BASE_URL=http://<ip>:8080`, levanta todo y comprueba desde afuera que la API responda. Se puede volver a correr para actualizar, porque no toca el `.env` existente. La URL y las credenciales de acceso se entregan a la cátedra por un canal privado, nunca en este repositorio.
 
 ## Estructura del repositorio
 
