@@ -8,6 +8,7 @@ export const STUDENT_SEEDS: MockProfile[] = [
     about: 'Cursando el cuarto año de Ingeniería Informática. Me apasiona entender cómo se construye la confianza en sistemas distribuidos: firmas, hashes, registros inmutables. Disfruto armar prototipos chicos que se puedan explicar en cinco minutos y después romperlos para ver qué aprendo. Busco mi primera experiencia profesional en seguridad o infraestructura.',
     openTo: ['Prácticas', 'Proyectos', 'Mentorías'], availability: 'Disponible 20 h semanales desde marzo',
     contactEmail: 'camila.ferreyra.contacto@ejemplo.test',
+    certificatesFeatured: ['c2b84e10-9a37-4f52-8d6b-000000000001', 'e4d25b80-1c9a-4f73-8e06-000000000001'],
     links: links([['github', 'GitHub', 'https://github.com/camila-ferreyra-demo'], ['linkedin', 'LinkedIn', 'https://www.linkedin.com/in/camila-ferreyra-demo'], ['portfolio', 'Portfolio', 'https://camila-ferreyra.example.test']]),
     experience: exp([
       ['Ayudante de cátedra', 'Instituto Demo · Redes y Seguridad I', '2026-03', null, 'Acompaño a un grupo de 25 estudiantes en los laboratorios de redes y criptografía básica.', ['Armé guías de laboratorio con Wireshark y OpenSSL', 'Mejoré la tasa de entrega de TPs del 70% al 90%'], 'Buenos Aires'],

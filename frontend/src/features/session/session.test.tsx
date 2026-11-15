@@ -105,9 +105,9 @@ describe('guards de perfiles', () => {
     }
   });
 
-  it('/p/:slug y /directory son públicas (sin sesión muestran "Ingresar")', () => {
+  it('/p/:slug y /directory son públicas (sin sesión muestran "Ingresar")', async () => {
     renderAt('/p/camila-ferreyra');
-    heading('Perfil público');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Camila Ferreyra' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ingresar' })).toBeInTheDocument();
     cleanup();
     renderAt('/directory');
