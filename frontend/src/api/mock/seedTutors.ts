@@ -83,7 +83,7 @@ export const TUTOR_SEEDS: MockProfile[] = [
   }),
   make(undefined, 'gustavo-echeverria', {
     displayName: 'Gustavo Echeverría', pronouns: 'él', role: 'operator', coverStyle: 'arcos', location: 'Mendoza, Argentina',
-    headline: 'Tutor de Registros Distribuidos · Blockchain sin humo',
+    headline: 'Tutor de Registros Distribuidos · Sistemas distribuidos sin humo',
     about: 'Trabajé en proyectos de registros distribuidos para el sector público y financiero. En el aula separo lo que sirve de lo que es marketing, y enseño a elegir entre una base de datos común y un registro distribuido.',
     openTo: ['Mentorías', 'Consultoría'], availability: 'Viernes por la tarde',
     links: links([['linkedin', 'LinkedIn', 'https://www.linkedin.com/in/gustavo-echeverria-demo'], ['web', 'Newsletter', 'https://gustavo-echeverria.example.test']]),

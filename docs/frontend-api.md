@@ -84,3 +84,20 @@ Sin sesión o con rol incorrecto en una ruta protegida: 403 en el lugar (sin red
 **Editor y ajustes (etapa C).** `PUT /api/me/profile` recibe el parche del editor (sin `role` ni `hiddenSections`; Ajustes envía `hiddenSections` o `slug` o `contactEmail` solos). `contactEmail: ""` en el PUT significa **no publicar ningún email** (el servidor borra el campo). Las fotos se suben aparte (`uploadAvatar`); "Quitar foto" hace `PUT {avatarUrl}` con un avatar SVG generado en el cliente, porque el perfil nunca queda sin foto. El editor guarda un borrador en `localStorage['pe-draft:<rol>:<nombre>']` (sin la foto). TODO(equipo): Ajustes muestra el email de la cuenta de solo lectura, pero `SessionUser` no lo trae; hoy solo se obtiene del token del mock. Hace falta que `/login` o un endpoint de cuenta lo devuelva.
 
 **Rutas.** Públicas: `/p/:slug`, `/directory`. Con sesión (cualquier rol): `/home`, `/profile`, `/profile/edit`, `/profile/settings`. Alumno: `/student/certificates/:id`. Destinos post-login sin cambios.
+
+**Endpoints de perfiles que necesita el backend (resumen).** `GET/PUT /api/me/profile`, `POST /api/me/profile/avatar`, `GET /api/profiles/{slug}` (público), `GET /api/profiles?q=&role=&skill=&page=` (público), `GET /api/profiles/slug-available?slug=` y `GET /api/certificates/{id}` (detalle con `sha256` opcional). Además hace falta devolver el email de la cuenta en `/login` o en un endpoint de cuenta (solo para Ajustes, de solo lectura). Ningún endpoint público devuelve el email de cuenta.
+
+## Pendientes `TODO(equipo)` de perfiles y nuevas páginas
+
+Salen de `grep -rn "TODO(equipo)" frontend/src`:
+
+| Dónde | Pendiente |
+|---|---|
+| `src/api/ApiClient.ts`, `src/api/httpClient.ts`, `src/api/types.ts` | El backend aún no tiene los endpoints de perfiles (tabla de «Perfiles»); el cliente HTTP usa los propuestos. |
+| `src/features/profile/directoryData.ts` | `GET /api/profiles` debería devolver `total` y conteos por rol; hoy el cliente pide páginas (tope 25) y pagina localmente. |
+| `src/features/profile/ProfileSettingsPage.tsx` / `SessionUser` | Email de cuenta para Ajustes: `/login` o un endpoint de cuenta debe traerlo. |
+| `src/api/types.ts` (`created_at`, `institution`, `issued_at`, `sha256`) | Campos que no están en contracts §5; el frontend los trata como opcionales. |
+| `src/api/mock/MockApiClient.ts`, `src/features/student/CertificateDetailPage.tsx` | Hash (`sha256`) real del PDF registrado; se muestra solo si el backend lo envía. |
+| `src/app/routes.tsx`, `src/features/verify/VerifyLookup.tsx` | Qué mostrar en `/verify` sin `cert_id`. |
+| `src/config/pending.ts` | Formato exacto del CSV (una columna `email` vs. `nombre`+`email`), ejemplo y texto de ayuda. |
+

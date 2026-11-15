@@ -28,8 +28,15 @@ export function PreviewDock({ draft, onClose }: { draft: Profile; onClose: () =>
 /** Pantalla completa (tablet y móvil). Se cierra con Esc o con el botón. */
 export function PreviewOverlay({ draft, onClose }: { draft: Profile; onClose: () => void }) {
   const closeRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef(document.activeElement as HTMLElement | null); // se lee en el primer render, antes de mover el foco
+  // Al abrir, el foco va a «Cerrar»; al cerrar vuelve al botón que abrió la vista previa.
   useEffect(() => {
+    const opener = openerRef.current;
     closeRef.current?.focus();
+    // setTimeout: el editor sigue inerte hasta que la página termine de actualizarse.
+    return () => { setTimeout(() => { if (opener && opener !== document.body && document.contains(opener)) opener.focus(); }, 0); };
+  }, []);
+  useEffect(() => {
     const key = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', key);
     const prev = document.body.style.overflow;

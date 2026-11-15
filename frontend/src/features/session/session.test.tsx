@@ -111,7 +111,7 @@ describe('guards de perfiles', () => {
     expect(screen.getByRole('link', { name: 'Ingresar' })).toBeInTheDocument();
     cleanup();
     renderAt('/directory');
-    heading('Directorio');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Directorio' })).toBeInTheDocument();
   });
 
   it('con sesión, las rutas públicas muestran la topbar de sesión con la nav del rol', () => {
@@ -142,11 +142,12 @@ describe('guards de perfiles', () => {
 });
 
 describe('sesión', () => {
-  it('sobrevive a la recarga (sessionStorage)', () => {
+  it('sobrevive a la recarga (sessionStorage)', async () => {
     saveSession(student);
     renderAt('/student/certificates'); // "recarga": árbol nuevo, mismo sessionStorage
     expect(screen.getByRole('heading', { name: 'Mis certificados' })).toBeInTheDocument();
     expect(screen.getByText('Camila Ferreyra')).toBeInTheDocument();
+    await screen.findAllByRole('button', { name: /Descargar PDF/ }); // espera la lista: evita el warning de act()
   });
 
   it('cerrar sesión la limpia y va a /login', async () => {

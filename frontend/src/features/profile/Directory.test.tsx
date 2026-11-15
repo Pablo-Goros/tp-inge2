@@ -24,7 +24,7 @@ beforeEach(() => { clearSession(); resetProfiles(); });
 describe('Directorio', () => {
   it('es público: encabezado, buscador con label y primera página de 12 tarjetas enlazadas', async () => {
     const r = renderDir(mk());
-    expect(screen.getByRole('heading', { level: 1, name: 'Directorio' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Directorio' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ingresar' })).toBeInTheDocument();
     expect(screen.getByLabelText('Buscar personas')).toHaveAttribute('type', 'search');
     const items = await people();

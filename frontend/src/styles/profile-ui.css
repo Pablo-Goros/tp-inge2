@@ -86,3 +86,18 @@
   .top-nav { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: thin; min-width: 0; -webkit-overflow-scrolling: touch; }
   .top-nav .nav { flex: none; white-space: nowrap; }
 }
+
+/* Targets táctiles >= 44 px en móvil (WCAG 2.5.8 / pedido de calidad) */
+@media (max-width: 720px) {
+  .btn.btn-sm, .top .top-user .btn { min-height: 44px; }
+  .top .top-nav .nav { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; justify-content: center; padding: 0 0 2px; }
+  .top .top-brand { display: inline-flex; align-items: center; min-height: 44px; }
+  .lnk-draw, .sw { position: relative; }
+  .lnk-draw::after { content: ''; position: absolute; left: -4px; right: -4px; top: -11px; bottom: -11px; }
+  .sw::after { content: ''; position: absolute; left: -6px; right: -6px; top: -10px; bottom: -10px; }
+  button.rl-btn { min-height: 44px; min-width: 44px; }
+  .ci-x { position: relative; }
+  .ci-x::after { content: ''; position: absolute; inset: -11px; }
+  /* La barra de guardado y el selector de sección son fijos: que el foco no quede tapado */
+  html:has(.pe-bar) { scroll-padding-bottom: 160px; scroll-padding-top: 90px; }
+}

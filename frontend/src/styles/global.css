@@ -189,3 +189,9 @@ code { color: inherit; }
   .top-nav .nav { padding-bottom: 8px; }
   .top-bare { padding: 0 20px; min-height: 52px; flex-wrap: nowrap; }
 }
+
+/* Movimiento reducido: el esqueleto queda quieto y el spinner pasa a un pulso lento (sigue indicando carga). */
+@media (prefers-reduced-motion: reduce) {
+  .sk { animation: none; }
+  .spin { animation: none; border-right-color: currentColor; opacity: .6; }
+}

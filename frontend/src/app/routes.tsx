@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Outlet, type RouteObject } from 'react-router-dom';
 import { NotFoundPage } from '../features/errors/NotFoundPage';
 import { RouteErrorPage } from '../features/errors/UnexpectedErrorPage';
@@ -5,10 +6,7 @@ import { BatchDetailPage } from '../features/operator/BatchDetailPage';
 import { BatchListPage } from '../features/operator/BatchListPage';
 import { NewBatchPage } from '../features/operator/NewBatchPage';
 import { HomePage } from '../features/home/HomePage';
-import { DirectoryPage } from '../features/profile/DirectoryPage';
-import { ProfileEditPage } from '../features/profile/ProfileEditPage';
 import { ProfilePage } from '../features/profile/ProfilePage';
-import { ProfileSettingsPage } from '../features/profile/ProfileSettingsPage';
 import { PublicProfilePage } from '../features/profile/PublicProfilePage';
 import { CertificateDetailPage } from '../features/student/CertificateDetailPage';
 import { MyCertificatesPage } from '../features/student/MyCertificatesPage';
@@ -18,6 +16,14 @@ import { RequireRole } from '../features/session/RequireRole';
 import { VerifyPage } from '../features/verify/VerifyPage';
 import { AppLayout } from './AppLayout';
 import type { ApiClient } from '../api';
+
+// Editor, ajustes y directorio se cargan bajo demanda para no inflar el bundle inicial.
+const DirectoryPage = lazy(() => import('../features/profile/DirectoryPage').then((m) => ({ default: m.DirectoryPage })));
+const ProfileEditPage = lazy(() => import('../features/profile/ProfileEditPage').then((m) => ({ default: m.ProfileEditPage })));
+const ProfileSettingsPage = lazy(() => import('../features/profile/ProfileSettingsPage').then((m) => ({ default: m.ProfileSettingsPage })));
+const Lazy = ({ children }: { children: ReactNode }) => (
+  <Suspense fallback={<div className="page" role="status" aria-live="polite"><span className="sr-only">Cargando…</span></div>}>{children}</Suspense>
+);
 
 function AuthShell({ client }: { client?: ApiClient }) {
   return <AuthProvider client={client}><Outlet /></AuthProvider>;
@@ -44,14 +50,14 @@ export const buildRoutes = (client?: ApiClient): RouteObject[] => [
               { path: '/verify', element: <VerifyPage /> }, // TODO(equipo): el contrato verifica por cert_id; /verify sin id solo lo usa el enlace del login
               { path: '/verify/:certId', element: <VerifyPage /> },
               { path: '/p/:slug', element: <PublicProfilePage /> }, // pública
-              { path: '/directory', element: <DirectoryPage /> }, // pública
+              { path: '/directory', element: <Lazy><DirectoryPage /></Lazy> }, // pública
               {
                 element: <RequireRole role="any"><Outlet /></RequireRole>,
                 children: [
                   { path: '/home', element: <HomePage /> },
                   { path: '/profile', element: <ProfilePage /> },
-                  { path: '/profile/edit', element: <ProfileEditPage /> },
-                  { path: '/profile/settings', element: <ProfileSettingsPage /> },
+                  { path: '/profile/edit', element: <Lazy><ProfileEditPage /></Lazy> },
+                  { path: '/profile/settings', element: <Lazy><ProfileSettingsPage /></Lazy> },
                 ],
               },
               {
