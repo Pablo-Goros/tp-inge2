@@ -12,13 +12,16 @@ interface Props {
   mode: 'own' | 'public';
   /** Aviso arriba para el dueño que mira su perfil público. */
   banner?: ReactNode;
+  /** Dentro de otra pantalla (vista previa): sin <main> ni ids de ancla. */
+  embedded?: boolean;
 }
 
 /** Perfil completo. Mi perfil y el perfil público comparten este layout. */
-export function ProfileView({ profile, mode, banner }: Props) {
-  const ctx: ViewCtx = { profile, own: mode === 'own' };
+export function ProfileView({ profile, mode, banner, embedded }: Props) {
+  const ctx: ViewCtx = { profile, own: mode === 'own', embedded };
+  const Root = embedded ? 'div' : 'main';
   return (
-    <main className="pv">
+    <Root className="pv">
       {banner}
       <ProfileHeader ctx={ctx} />
       <div className="pv-grid">
@@ -28,6 +31,6 @@ export function ProfileView({ profile, mode, banner }: Props) {
           <SideSections ctx={ctx} />
         </div>
       </div>
-    </main>
+    </Root>
   );
 }

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Profile, SectionKey } from '../../api';
 import { Chip } from '../../components/ui';
 
-export interface ViewCtx { profile: Profile; own: boolean }
+export interface ViewCtx { profile: Profile; own: boolean; /** Dentro de otra pantalla (vista previa del editor): sin ids de ancla que choquen. */ embedded?: boolean }
 export type PKey = SectionKey | 'goals';
 
 interface Props {
@@ -26,7 +26,7 @@ export function PSection({ ctx, k, title, empty, emptyHint, publicEmptyText, chi
   const hid = `pv-h-${k}`;
   const editTo = `/profile/edit#${k}`;
   return (
-    <section id={k} aria-labelledby={hid} className={['card pv-sec', `pv-o-${k}`, ctx.own && hidden && 'pv-dim', className].filter(Boolean).join(' ')}>
+    <section id={ctx.embedded ? undefined : k} aria-labelledby={hid} className={['card pv-sec', `pv-o-${k}`, ctx.own && hidden && 'pv-dim', className].filter(Boolean).join(' ')}>
       <div className="sc-head">
         <h2 id={hid} className="disp sc-title">{title}</h2>
         {ctx.own && (

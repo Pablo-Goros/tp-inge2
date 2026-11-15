@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Link, type LinkProps } from 'react-router-dom';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
@@ -20,10 +20,11 @@ interface ButtonProps extends Common, ButtonHTMLAttributes<HTMLButtonElement> {
   loadingLabel?: ReactNode;
 }
 
-export function Button({ variant, block, small, loading, loadingLabel, children, className, disabled, type = 'button', ...rest }: ButtonProps) {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button({ variant, block, small, loading, loadingLabel, children, className, disabled, type = 'button', ...rest }, ref) {
   return (
     <button
       {...rest}
+      ref={ref}
       type={type}
       className={classes({ variant, block, small }, className)}
       disabled={disabled || loading}
@@ -33,7 +34,7 @@ export function Button({ variant, block, small, loading, loadingLabel, children,
       {loading ? (loadingLabel ?? children) : children}
     </button>
   );
-}
+});
 
 export function LinkButton({ variant, block, small, className, ...rest }: Common & LinkProps) {
   return <Link {...rest} className={classes({ variant, block, small }, className)} />;
