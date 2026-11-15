@@ -200,13 +200,15 @@ El frontend consulta este endpoint cada 2 s mientras el estado sea `IN_PROGRESS`
 - `404` con `{ "error": { "code": "NOT_FOUND", "message": "Certificado no registrado", "details": [] } }` si no está en el registro. **Nunca** se devuelve email, nota ni datos de cuenta. UUID inválido: `400 VALIDATION_ERROR`.
 - `503 UNAVAILABLE` si el registro no responde o la integración de los casos de uso de C aún no está disponible (no confundir con «no registrado»). B delega en C mediante `get_verification`; no usa la existencia de un certificado local como prueba de registro. Los falsos solo se usan en pruebas.
 
-**`POST /verify/{cert_id}/file`** (público) — `multipart/form-data`: `file` (PDF, máx. 5 MB). `200`:
+**`POST /verify/{cert_id}/file`** (público) — `multipart/form-data`: `file` (hasta 5.242.880 bytes inclusive; 5 MiB). `200`:
 
 ```json
 { "result": "VALID" | "ALTERED" | "NOT_FOUND" }
 ```
 
-- Calcula SHA-256 del archivo subido y lo compara con `registry.lookup(cert_id)`, **no** con la copia en `certificates`.
+- El adaptador lee como máximo 5.242.881 bytes y rechaza el exceso con `400 VALIDATION_ERROR`. UUID inválido o archivo ausente también devuelve 400. No persiste la subida ni decide autenticidad por nombre, extensión o MIME.
+- El caso de uso de C calcula SHA-256 del archivo subido y lo compara con `registry.lookup(cert_id)`, **no** con la copia en `certificates`.
+- La dependencia `get_verification` expone `compare_file(cert_id, content)`; C devuelve el resultado y traduce la indisponibilidad a `VerificationUnavailable`. Sin integración C, la ejecución normal responde `503 UNAVAILABLE`; los falsos quedan limitados a pruebas.
 - `VALID`: coincide. `ALTERED`: el id existe y la huella difiere. `NOT_FOUND`: id sin registro. Registro no disponible: `503 UNAVAILABLE`.
 - **[Decisión propuesta]** La verificación de archivo cuelga de un `cert_id`: el QR del PDF apunta a `{PUBLIC_BASE_URL}/verify/{cert_id}` y esa página permite subir el archivo. No se intenta extraer el id desde el PDF subido. *(Cambia respecto del borrador previo, que listaba `POST /verify/file` sin id.)*
 
