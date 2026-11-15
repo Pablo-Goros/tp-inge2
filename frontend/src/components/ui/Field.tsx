@@ -14,7 +14,7 @@ export function Field({ label, error, help, ...input }: FieldProps) {
   return (
     <div className="fld">
       <label htmlFor={id}>{label}</label>
-      <input {...input} id={id} className="inp" aria-invalid={error ? true : undefined} aria-describedby={describedBy} />
+      <input {...input} id={id} className="inp" aria-invalid={error ? true : input['aria-invalid']} aria-describedby={describedBy} />
       {error && <span id={errId} className="err">{error}</span>}
       {help && <span id={helpId} className="help">{help}</span>}
     </div>

@@ -1,0 +1,66 @@
+import type {
+  BatchDetail, BatchSummary, CertificateItem, CsvIssue, LoginResponse, PublicCertificate, VerifyOutcome,
+} from './types';
+
+/** Códigos de error de docs/contracts.md §5, más 'NETWORK' (sin respuesta del servidor). */
+export type ApiErrorCode =
+  | 'VALIDATION_ERROR' | 'UNAUTHENTICATED' | 'FORBIDDEN' | 'NOT_FOUND' | 'IDEMPOTENCY_CONFLICT'
+  | 'UNAVAILABLE' | 'HTTP_ERROR' | 'INTERNAL_ERROR' | 'NETWORK';
+
+export class ApiError extends Error {
+  /** Estado HTTP; 0 si no hubo respuesta (NETWORK). */
+  readonly status: number;
+  readonly code: ApiErrorCode;
+  /** `error.details` del contrato. En VALIDATION_ERROR de POST /batches es CsvIssue[]. */
+  readonly details: unknown[];
+
+  constructor(status: number, code: ApiErrorCode, message: string, details: unknown[] = []) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.details = details;
+  }
+
+  /** Filas con problema del CSV (solo en VALIDATION_ERROR de createBatch). */
+  get csvIssues(): CsvIssue[] {
+    return this.code === 'VALIDATION_ERROR' ? (this.details as CsvIssue[]).filter((d) => d && typeof d === 'object' && 'row' in d) : [];
+  }
+}
+
+export interface CreateBatchInput {
+  courseName: string;
+  /** YYYY-MM-DD */
+  completionDate: string;
+  file: File;
+  /** Se envía como cabecera Idempotency-Key. Reusar la misma clave al reintentar el mismo envío. */
+  idempotencyKey: string;
+}
+
+export interface CreateBatchResult {
+  batch_id: string;
+  status: 'IN_PROGRESS';
+  total: number;
+}
+
+/**
+ * Contrato del frontend con el backend (docs/frontend-api.md). Las etapas 3-6 la consumen sin modificarla.
+ * Todos los métodos rechazan con ApiError. El cliente toma el token de la sesión (src/api/token.ts).
+ *
+ * Notas de semántica:
+ * - login: 401 → ApiError UNAUTHENTICATED.
+ * - getPublicCertificate: 404 → NOT_FOUND, 503 → UNAVAILABLE (se lanzan).
+ * - verifyFile: resuelve con los 4 resultados; el 503 del registro se devuelve como 'UNAVAILABLE'
+ *   (no se lanza). Otros errores (red, 5xx) sí se lanzan.
+ * - createBatch: 400 → VALIDATION_ERROR con `csvIssues`; 409 → IDEMPOTENCY_CONFLICT.
+ */
+export interface ApiClient {
+  login(email: string, password: string): Promise<LoginResponse>;
+  createBatch(input: CreateBatchInput): Promise<CreateBatchResult>;
+  listBatches(): Promise<BatchSummary[]>;
+  getBatch(id: string): Promise<BatchDetail>;
+  listMyCertificates(): Promise<CertificateItem[]>;
+  downloadCertificatePdf(id: string): Promise<Blob>;
+  getPublicCertificate(certId: string): Promise<PublicCertificate>;
+  verifyFile(certId: string, file: File): Promise<VerifyOutcome>;
+}

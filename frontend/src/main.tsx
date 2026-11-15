@@ -1,14 +1,12 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { RouterProvider } from 'react-router-dom';
 import './styles/global.css';
-import { ComponentsGallery } from './dev/ComponentsGallery';
+import './styles/app.css';
+import { createAppRouter } from './app/router';
 
-// TODO(etapa 2): reemplazar por el router real con guards.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <ComponentsGallery />
-    </BrowserRouter>
+    <RouterProvider router={createAppRouter()} />
   </StrictMode>,
 );
