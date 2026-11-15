@@ -131,3 +131,12 @@ def test_file_verification_openapi_has_no_placeholder():
     operation = create_app().openapi()['paths']['/api/verify/{cert_id}/file']['post']
     assert set(operation['responses']) == {'200', '400', '404', '503'}
     assert operation.get('security', []) == []
+
+
+def test_file_verification_openapi_describes_exact_limit_and_authenticity():
+    schema = create_app().openapi()
+    body = schema['paths']['/api/verify/{cert_id}/file']['post']['requestBody']['content']['multipart/form-data']['schema']
+    properties = schema['components']['schemas'][body['$ref'].split('/')[-1]]['properties']
+    description = properties['file'].get('description', '')
+    assert '5.242.880 bytes' in description
+    assert 'MIME' in description and 'autenticidad' in description

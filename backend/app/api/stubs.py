@@ -29,7 +29,7 @@ def verify(cert_id: uuid.UUID, service: Verification = Depends(get_verification)
 
 @router.post("/verify/{cert_id}/file", tags=["verify"], response_model=VerifyFileResponse,
              responses={**_PUBLIC, 400: {"model": ErrorResponse}})
-async def verify_file(cert_id: uuid.UUID, file: UploadFile = File(),
+async def verify_file(cert_id: uuid.UUID, file: UploadFile = File(description="Archivo de hasta 5.242.880 bytes; la autenticidad se compara con el registro, sin depender del MIME declarado"),
                       service: Verification = Depends(get_verification)):
     # Read at most the limit plus one byte; never retain an unbounded upload.
     content = await file.read(5_242_880 + 1)

@@ -800,7 +800,8 @@
           "file": {
             "type": "string",
             "contentMediaType": "application/octet-stream",
-            "title": "File"
+            "title": "File",
+            "description": "Archivo de hasta 5.242.880 bytes; la autenticidad se compara con el registro, sin depender del MIME declarado"
           }
         },
         "type": "object",
