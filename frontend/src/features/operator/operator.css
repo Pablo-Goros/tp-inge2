@@ -1,0 +1,52 @@
+/* Pantallas del operador (etapa 5). Fuente: design/Lotes, NuevoLote y DetalleLote .dc.html */
+.op-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.op-head > div { display: flex; flex-direction: column; gap: 6px; }
+.op-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.op-back { align-self: flex-start; }
+.op-code { color: var(--mu); font-size: 12px; white-space: nowrap; }
+.op-fail { color: var(--red); }
+.op-warn { color: var(--amb); }
+.op-mini-card { text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 8px; padding: 16px; }
+.op-mini-card:hover { background: var(--s2); }
+.op-row-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.op-bar-wrap { min-width: 90px; }
+
+/* Nuevo lote */
+.op-form { display: flex; flex-direction: column; gap: 20px; max-width: 640px; }
+.op-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.op-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; min-height: 56px; padding: 8px 14px; border: 1px dashed var(--g1); border-radius: var(--r-md); background: var(--s1); }
+.op-file-err { border-color: var(--red); }
+.op-file-name { overflow-wrap: anywhere; }
+.op-notice { display: flex; flex-direction: column; gap: 16px; }
+.op-notice:focus { outline: none; }
+.op-notice:focus-visible { outline: 2px solid var(--g2); outline-offset: 4px; }
+.op-reject-title { font-weight: 700; }
+.op-reject-card { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; }
+
+/* Detalle */
+.op-tiles { display: flex; flex-wrap: wrap; gap: 12px; }
+.op-tile { flex: 1 1 140px; border: 1px solid var(--bd); border-radius: var(--r-md); padding: 14px 16px; background: var(--s1); display: flex; flex-direction: column; }
+.op-tile b { font-size: 26px; line-height: 1.2; }
+.op-live { display: flex; align-items: center; gap: 8px; }
+.op-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 999px;
+  border: 1px solid var(--bd); background: none; color: var(--mu); font-family: inherit; font-size: 13px; cursor: pointer;
+}
+.chip[aria-pressed='true'] { border-color: var(--g1); color: var(--g2); background: #101a0c; }
+.op-id { display: inline-flex; align-items: center; gap: 8px; }
+.op-id code { color: var(--g1); font-size: 12px; }
+.op-copy { background: none; border: 0; color: var(--g2); font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0; }
+.op-stale { color: var(--amb); }
+
+@media (max-width: 720px) {
+  .op-head .btn { align-self: stretch; }
+  .op-head { flex-direction: column; align-items: stretch; }
+  .op-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .op-tile { padding: 10px 12px; }
+  .op-tile b { font-size: 20px; }
+  .op-form .btn, .op-actions .btn { align-self: stretch; }
+  .op-actions { flex-direction: column; align-items: stretch; }
+  .op-notice .btn { align-self: stretch; }
+}
+.op-tbl .tbl-wrap { border: 1px solid var(--bd); border-radius: var(--r-lg); background: var(--s1); }
