@@ -17,7 +17,7 @@ export function Topbar({ nav, user, onLogout, homeTo = '/', right }: Props) {
   const bare = !nav?.length;
   return (
     <header className={bare ? 'top top-bare' : 'top'}>
-      <Link to={homeTo} className="disp grad top-brand" aria-label="Certificados verificables, inicio">CERT·VERIF</Link>
+      <Link to={homeTo} className="disp top-brand" aria-label="Certificados verificables, inicio">CERT<span className="brand-dot" aria-hidden="true">·</span>VERIF</Link>
       {!bare && (
         <nav className="top-nav" aria-label="Principal">
           {nav!.map((n) => (

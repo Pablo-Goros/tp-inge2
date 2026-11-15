@@ -15,7 +15,7 @@ export function ComponentsGallery() {
     <>
       <Topbar nav={[{ to: '/', label: 'Lotes' }, { to: '/nuevo', label: 'Nuevo lote' }]} user={{ name: 'Marcos Quiroga', roleLabel: 'Operador' }} onLogout={() => {}} />
       <main className="page">
-        <h1 className="disp grad page-title">Sistema de componentes</h1>
+        <h1 className="disp page-title">Sistema de componentes</h1>
         <div className="row">
           <Button>Ingresar</Button><Button variant="secondary">Reintentar</Button><Button variant="ghost">Cerrar sesión</Button>
           <Button loading loadingLabel="Ingresando…">Ingresar</Button><Button disabled>Emitir certificados</Button>

@@ -1,20 +1,35 @@
-/* Tokens extraídos de design/Main.dc.html */
+/* Identidad visual: tema claro "confianza corporativa". Única fuente de colores (ver docs/identidad-visual.md). */
 :root {
-  --bg: #000;
-  --g1: #afd587;
-  --g2: #dbffc9;
-  --s1: #0b0f0a;
-  --s2: #121810;
-  --bd: #2c3628;
-  --mu: #a3ae9d;
-  --red: #ff8080;
-  --amb: #ffc757;
-  --cy: #92d6ff;
-  --gry: #bcc3cc;
-  --grad: linear-gradient(90deg, #afd587, #dbffc9);
+  color-scheme: light;
 
-  --font-body: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
-  --font-display: 'Archivo Black', Inter, system-ui, sans-serif;
+  --bg: #f4f8fb;
+  --surface: #ffffff;
+  --surface-2: #eaf1f7;
+  --border: #c9d8e6;
+  --border-input: #64748b;
+  --text: #0c2d48;
+  --text-muted: #475569;
+
+  --brand: #0369a1;
+  --brand-hover: #075985;
+  --on-brand: #ffffff;
+  --gold: #a16207; /* solo detalle de marca, nunca estados ni botones */
+  --focus: #0369a1;
+  --focus-ring: #ffffff;
+
+  --ok: #166534;   --ok-bg: #f0fdf4;   --ok-bd: #86c69a;
+  --bad: #b91c1c;  --bad-bg: #fef2f2;  --bad-bd: #f1a6a6;
+  --warn: #92400e; --warn-bg: #fffbeb; --warn-bd: #e6c27a;
+  --info: #0e7490; --info-bg: #ecfeff; --info-bd: #8fd0de;
+  --mut: #475569;  --mut-bg: #f1f5f9;  --mut-bd: #b6c2cf;
+
+  --info-stripe: #5bb8cc;
+  --bar-bg: #e2eaf2;
+  --placeholder: #64748b;
+  --shadow-card: 0 1px 2px rgba(12, 45, 72, 0.06);
+
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --r-sm: 6px;
   --r-md: 8px;

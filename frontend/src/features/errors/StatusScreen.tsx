@@ -22,7 +22,7 @@ export function StatusScreen({ code, warn, title, message, children }: Props) {
   }, [title]);
   return (
     <main className="ctr">
-      <div className={warn ? 'disp ctr-code ctr-warn' : 'disp grad ctr-code'} aria-hidden="true">{code}</div>
+      <div className={warn ? 'disp ctr-code ctr-warn' : 'disp ctr-code'} aria-hidden="true">{code}</div>
       <h1 className="ctr-title" tabIndex={-1} ref={h1}>{title}</h1>
       <p>{message}</p>
       <div className="ctr-actions">{children}</div>

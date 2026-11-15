@@ -55,7 +55,7 @@ export function Table<T>({ columns, rows, rowKey, caption, rowClass, renderCard,
           const group = groupBefore?.(row, i);
           return (
             <li key={rowKey(row)} style={{ display: 'contents' }}>
-              {group && <div className="lbl" style={{ color: 'var(--red)' }}>{group}</div>}
+              {group && <div className="lbl" style={{ color: 'var(--bad)' }}>{group}</div>}
               {renderCard ? renderCard(row) : <DefaultCard columns={columns} row={row} fail={rowClass?.(row) === 'fail'} />}
             </li>
           );

@@ -35,8 +35,8 @@ function Detail({ batch, stale, updatedAt }: { batch: BatchDetail; stale: boolea
   if (batch.created_at) meta.push(`creado ${formatDate(batch.created_at)}`);
 
   const tiles: [string, number, string | undefined][] = [
-    ['Pendientes', c.pending, undefined], ['Procesando', c.processing, 'var(--cy)'],
-    ['Emitidos', c.issued, 'var(--g1)'], ['Fallidos', c.failed, 'var(--red)'], ['Total', c.total, undefined],
+    ['Pendientes', c.pending, undefined], ['Procesando', c.processing, 'var(--info)'],
+    ['Emitidos', c.issued, 'var(--ok)'], ['Fallidos', c.failed, 'var(--bad)'], ['Total', c.total, undefined],
   ];
 
   return (
@@ -44,7 +44,7 @@ function Detail({ batch, stale, updatedAt }: { batch: BatchDetail; stale: boolea
       <div className="stack" style={{ gap: 8 }}>
         <BackLink />
         <div className="op-title-row">
-          <h1 className="disp grad page-title">{batch.course_name}</h1>
+          <h1 className="disp page-title">{batch.course_name}</h1>
           <BatchStatusBadge status={batch.status} />
         </div>
         <p className="help">{meta.join(' · ')}</p>
@@ -62,7 +62,7 @@ function Detail({ batch, stale, updatedAt }: { batch: BatchDetail; stale: boolea
             ))}
           </div>
           {inProgress && (
-            <p className="help op-live"><span className="spin" style={{ color: 'var(--cy)' }} aria-hidden="true" />El progreso se actualiza solo mientras tengas abierta esta página.</p>
+            <p className="help op-live"><span className="spin" style={{ color: 'var(--info)' }} aria-hidden="true" />El progreso se actualiza solo mientras tengas abierta esta página.</p>
           )}
           {stale && <StaleNotice since={updatedAt} />}
         </div>

@@ -16,15 +16,15 @@ export function SegmentedProgress({ counts, compact, legend }: Props) {
   return (
     <div className="stack" style={{ gap: 12 }}>
       <div className={compact ? 'bar bar-sm' : 'bar'} role="img" aria-label={progressLabel(counts)}>
-        <div style={{ width: pct(counts.issued), background: 'var(--g1)' }} />
-        <div style={{ width: pct(counts.failed), background: 'var(--red)' }} />
+        <div style={{ width: pct(counts.issued), background: 'var(--ok)' }} />
+        <div style={{ width: pct(counts.failed), background: 'var(--bad)' }} />
         <div className="stripe" style={{ width: pct(counts.processing) }} />
       </div>
       {legend && (
         <div className="bar-legend" aria-hidden="true">
-          <span style={{ color: 'var(--g1)' }}>■ Emitidos {counts.issued}</span>
-          <span style={{ color: 'var(--red)' }}>■ Fallidos {counts.failed}</span>
-          <span style={{ color: 'var(--cy)' }}>■ Procesando {counts.processing}</span>
+          <span style={{ color: 'var(--ok)' }}>■ Emitidos {counts.issued}</span>
+          <span style={{ color: 'var(--bad)' }}>■ Fallidos {counts.failed}</span>
+          <span style={{ color: 'var(--info)' }}>■ Procesando {counts.processing}</span>
           <span>□ Pendientes {counts.pending}</span>
         </div>
       )}

@@ -17,7 +17,7 @@ type Check = { s: 'idle' } | { s: 'checking'; name: string } | { s: 'done'; name
 function Head({ sub }: { sub: string }) {
   return (
     <div className="vf-head">
-      <h1 className="disp grad page-title">Verificación de certificado</h1>
+      <h1 className="disp page-title">Verificación de certificado</h1>
       <p className="help">{sub}</p>
     </div>
   );

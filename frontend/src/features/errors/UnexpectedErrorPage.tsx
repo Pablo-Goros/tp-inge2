@@ -7,7 +7,7 @@ export function UnexpectedErrorPage() {
   return (
     <>
       <header className="top top-bare">
-        <a href="/" className="disp grad top-brand" aria-label="Certificados verificables, inicio">CERT·VERIF</a>
+        <a href="/" className="disp top-brand" aria-label="Certificados verificables, inicio">CERT<span className="brand-dot" aria-hidden="true">·</span>VERIF</a>
       </header>
       <StatusScreen code="!" warn title="Algo salió mal" message="Ocurrió un error inesperado. Probá de nuevo; si el problema sigue, volvé al inicio.">
         <a className="btn btn-p" href="/">Volver al inicio</a>

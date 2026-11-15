@@ -67,7 +67,7 @@ export function BatchListPage() {
     <div className="page">
       <div className="op-head">
         <div>
-          <h1 className="disp grad page-title">Lotes</h1>
+          <h1 className="disp page-title">Lotes</h1>
           <p className="help">Emisiones de certificados por curso.</p>
         </div>
         {newBtn}

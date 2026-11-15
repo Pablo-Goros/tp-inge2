@@ -32,7 +32,7 @@ export function MyCertificatesPage() {
   return (
     <div className="page">
       <div className="vf-head">
-        <h1 className="disp grad page-title">Mis certificados</h1>
+        <h1 className="disp page-title">Mis certificados</h1>
         <p className="help">Certificados emitidos a tu cuenta. Cada PDF incluye un QR para verificarlo.</p>
       </div>
       {load.s === 'loading' && <SkeletonList label="Cargando certificados…" rows={2} height={110} />}

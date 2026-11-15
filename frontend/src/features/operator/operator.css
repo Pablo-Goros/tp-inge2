@@ -3,41 +3,41 @@
 .op-head > div { display: flex; flex-direction: column; gap: 6px; }
 .op-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .op-back { align-self: flex-start; }
-.op-code { color: var(--mu); font-size: 12px; white-space: nowrap; }
-.op-fail { color: var(--red); }
-.op-warn { color: var(--amb); }
+.op-code { font-family: var(--font-mono); color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.op-fail { color: var(--bad); }
+.op-warn { color: var(--warn); }
 .op-mini-card { text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 8px; padding: 16px; }
-.op-mini-card:hover { background: var(--s2); }
+.op-mini-card:hover { background: var(--surface-2); }
 .op-row-head { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
 .op-bar-wrap { min-width: 90px; }
 
 /* Nuevo lote */
 .op-form { display: flex; flex-direction: column; gap: 20px; max-width: 640px; }
 .op-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-.op-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; min-height: 56px; padding: 8px 14px; border: 1px dashed var(--g1); border-radius: var(--r-md); background: var(--s1); }
-.op-file-err { border-color: var(--red); }
+.op-file { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; min-height: 56px; padding: 8px 14px; border: 1px dashed var(--brand); border-radius: var(--r-md); background: var(--surface); }
+.op-file-err { border-color: var(--bad); }
 .op-file-name { overflow-wrap: anywhere; }
 .op-notice { display: flex; flex-direction: column; gap: 16px; }
 .op-notice:focus { outline: none; }
-.op-notice:focus-visible { outline: 2px solid var(--g2); outline-offset: 4px; }
+.op-notice:focus-visible { outline: 2px solid var(--brand); outline-offset: 4px; }
 .op-reject-title { font-weight: 700; }
 .op-reject-card { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; }
 
 /* Detalle */
 .op-tiles { display: flex; flex-wrap: wrap; gap: 12px; }
-.op-tile { flex: 1 1 140px; border: 1px solid var(--bd); border-radius: var(--r-md); padding: 14px 16px; background: var(--s1); display: flex; flex-direction: column; }
-.op-tile b { font-size: 26px; line-height: 1.2; }
+.op-tile { flex: 1 1 140px; border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px; background: var(--surface); display: flex; flex-direction: column; }
+.op-tile b { font-size: 26px; font-weight: 700; line-height: 1.2; }
 .op-live { display: flex; align-items: center; gap: 8px; }
 .op-chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip {
   display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 999px;
-  border: 1px solid var(--bd); background: none; color: var(--mu); font-family: inherit; font-size: 13px; cursor: pointer;
+  border: 1px solid var(--border); background: none; color: var(--text-muted); font-family: inherit; font-size: 13px; cursor: pointer;
 }
-.chip[aria-pressed='true'] { border-color: var(--g1); color: var(--g2); background: #101a0c; }
+.chip[aria-pressed='true'] { border-color: var(--brand); color: var(--brand); background: var(--surface-2); font-weight: 600; }
 .op-id { display: inline-flex; align-items: center; gap: 8px; }
-.op-id code { color: var(--g1); font-size: 12px; }
-.op-copy { background: none; border: 0; color: var(--g2); font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0; }
-.op-stale { color: var(--amb); }
+.op-id code { font-family: var(--font-mono); font-size: 12px; }
+.op-copy { background: none; border: 0; color: var(--brand); font: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; padding: 0; }
+.op-stale { color: var(--warn); }
 
 @media (max-width: 720px) {
   .op-head .btn { align-self: stretch; }
@@ -49,4 +49,4 @@
   .op-actions { flex-direction: column; align-items: stretch; }
   .op-notice .btn { align-self: stretch; }
 }
-.op-tbl .tbl-wrap { border: 1px solid var(--bd); border-radius: var(--r-lg); background: var(--s1); }
+.op-tbl .tbl-wrap { border: 1px solid var(--border); border-radius: var(--r-lg); background: var(--surface); }

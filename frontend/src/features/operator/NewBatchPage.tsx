@@ -119,7 +119,7 @@ export function NewBatchPage() {
       <div className="op-head">
         <div>
           <Link className="lnk op-back" to="/operator/batches">← Lotes</Link>
-          <h1 className="disp grad page-title">Nuevo lote</h1>
+          <h1 className="disp page-title">Nuevo lote</h1>
         </div>
       </div>
 

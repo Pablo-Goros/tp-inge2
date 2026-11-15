@@ -42,7 +42,7 @@ export function LoginPage() {
     <main className="login">
       <section className="login-hero">
         <div className="stack" style={{ gap: 28 }}>
-          <h1 className="disp grad login-brand">CERTIFICADOS<br />VERIFICABLES</h1>
+          <h1 className="disp login-brand">CERTIFICADOS<br />VERIFICABLES</h1>
           <p className="login-lead">Prueba de concepto académica: emití certificados por lote y verificalos contra un registro de certificados.</p>
           <p className="help login-demo">Demo académica · no emite títulos oficiales.</p>
         </div>
