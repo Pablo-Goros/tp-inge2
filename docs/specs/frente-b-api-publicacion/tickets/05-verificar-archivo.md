@@ -1,7 +1,7 @@
 # 05: Comparar el archivo recibido con el registro
 
 **Spec:** [Frente B: API, base de datos y publicación](../spec.md)
-**Status:** ready-for-agent
+**Status:** in-progress
 
 ## What to build
 
@@ -20,3 +20,4 @@ Un verificador sube un archivo desde la página de un certificado y recibe el re
 ## Blocked by
 
 - [04: Consultar la verificación pública por identificador](04-verificacion-publica.md)
+
