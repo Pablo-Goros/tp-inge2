@@ -57,10 +57,11 @@ def test_student_token_on_operator_route_403(client, users):
     assert r.json()["error"]["code"] == "FORBIDDEN"
 
 
-def test_student_token_reaches_stub_501(client, users):
+def test_student_token_can_access_public_verification_without_c(client, users):
     token = login(client, "al@itba.test").json()["access_token"]
     r = client.get(f"/api/verify/{uuid.uuid4()}", headers={"Authorization": f"Bearer {token}"})
-    assert r.status_code == 501
+    assert r.status_code == 503
+    assert r.json()["error"]["code"] == "UNAVAILABLE"
 
 
 def test_missing_token_401(client, users):
@@ -132,7 +133,7 @@ def test_login_malformed_stored_hash_401(client, users, session):
     assert login(client, "op@itba.test").status_code == 401
 
 
-def test_stub_501_has_envelope(client, users):
+def test_unavailable_verification_has_envelope(client, users):
     token = login(client, "al@itba.test").json()["access_token"]
     r = client.get(f"/api/verify/{uuid.uuid4()}", headers={"Authorization": f"Bearer {token}"})
     assert r.json()["error"]["code"] == "UNAVAILABLE"
