@@ -409,6 +409,7 @@
           "verify"
         ],
         "summary": "Verify",
+        "description": "Return registered public academic data; never expose account data or grades.",
         "operationId": "verify_api_verify__cert_id__get",
         "parameters": [
           {
@@ -429,16 +430,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VerifyResponse"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Aún no implementado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -516,16 +507,6 @@
               }
             }
           },
-          "501": {
-            "description": "Aún no implementado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
           "404": {
             "content": {
               "application/json": {
@@ -555,6 +536,16 @@
               }
             },
             "description": "Bad Request"
+          },
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Implemented"
           }
         }
       }
