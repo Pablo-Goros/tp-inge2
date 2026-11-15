@@ -21,3 +21,29 @@ Revisar referencias anteriores: README declara ausencia de aplicación y blockch
 ## Evidencia
 
 Los resultados por ticket se agregan durante la integración. Los tickets 03 y 07 continúan pendientes mientras no esté disponible C; no existe evidencia de emisión real, PDF con/sin nota ni ausencia de doble emisión en el árbol recibido.
+
+## Revisión de código
+
+Punto fijo: `4f4b675f0a4576fe2b2a6066132a589c5eb9b757`; revisión de diff contra la rama de integración `implement/parte-b`.
+
+### Standards
+
+Cero infracciones documentadas y cero problemas materiales según los doce criterios de mantenibilidad de la skill code-review. Se revisaron glosario, contrato, arquitectura y reparto de módulos; el repositorio no contiene AGENTS.md, CODING_STANDARDS.md, CONTRIBUTING.md ni ADRs.
+
+### Spec
+
+Se detectó que OpenAPI no describía el máximo de 5.242.880 bytes de la subida pública. Corregido en código y artefacto exportado, con prueba de esquema red→green. La revisión también detectó inicialmente falta de fila 0 en exceso de CSV; quedó corregida como FILE_TOO_LARGE. No se detectó ampliación de alcance. Los tickets 03/07 conservan el bloqueo externo de C.
+
+La suite completa inicial encontró tres expectativas heredadas de 501 en auth/errores; se actualizaron a 503 UNAVAILABLE y ausencia de 501 en OpenAPI. La suite de auth/errores pasó 29 pruebas antes de reintegrar.
+
+## Verificación final (15/11/2026)
+
+Desde `backend`, con dependencias `.[test]` instaladas y Docker en PATH:
+
+```powershell
+python -m pytest -q
+```
+
+Resultado integrado: **188 passed, 1 warning in 74.39s**. La advertencia corresponde a deprecación Starlette/httpx. Se ejecutó contra PostgreSQL y RabbitMQ reales del Compose aislado, incluyendo migración con filas previas, aceptación HTTP, permisos, init repetible, concurrencia y recuperación física del broker. Los tests HTTP de verificación sustituyen solo C; no prueban la autenticidad con el registro real de C ausente.
+
+Tickets 01, 02, 04, 05 y 06: done y criterios comprobados tras integración. Tickets 03 y 07: blocked por ausencia de worker/PDF/registro/casos de uso de C. No se emitieron PDFs reales ni se afirmó idempotencia de emisión de C. Rama de integración: `implement/parte-b`; worktrees temporales eliminados. Sin PR solicitado.
