@@ -1,7 +1,7 @@
 # 06: Demostrar publicación tras una caída del broker
 
 **Spec:** [Frente B: API, base de datos y publicación](../spec.md)
-**Status:** in-progress
+**Status:** done
 
 ## What to build
 
@@ -11,14 +11,15 @@ Usar servicios aislados de prueba y los mecanismos de seguridad existentes de la
 
 ## Acceptance criteria
 
-- [ ] Con PostgreSQL disponible y RabbitMQ de prueba detenido, un lote válido se acepta por HTTP, crea solicitudes PENDING y conserva outbox sin published_at; no depende de una comprobación síncrona del broker.
-- [ ] Al volver RabbitMQ y ejecutar el publicador, aparecen mensajes persistentes con exactamente request_id y correlation_id, y se marca publicación solo tras publisher confirm y enrutamiento válido.
-- [ ] Un envío no enrutable o no confirmado conserva la fila pendiente; el proceso puede reconectar y continuar sin perder solicitudes.
-- [ ] Simular fallo tras publicar y antes de confirmar el cambio en base permite republicar el mismo request_id/correlation_id; se documenta como entrega al menos una vez.
-- [ ] Un nuevo ciclo no republica filas ya marcadas. El escenario no exige que el worker esté disponible ni promete que no existan mensajes repetidos.
-- [ ] Pruebas existentes y evidencia reproducible con PostgreSQL/RabbitMQ reales cubren el comportamiento. Se registran comandos, resultados y correcciones realizadas, si fueron necesarias.
+- [x] Con PostgreSQL disponible y RabbitMQ de prueba detenido, un lote válido se acepta por HTTP, crea solicitudes PENDING y conserva outbox sin published_at; no depende de una comprobación síncrona del broker.
+- [x] Al volver RabbitMQ y ejecutar el publicador, aparecen mensajes persistentes con exactamente request_id y correlation_id, y se marca publicación solo tras publisher confirm y enrutamiento válido.
+- [x] Un envío no enrutable o no confirmado conserva la fila pendiente; el proceso puede reconectar y continuar sin perder solicitudes.
+- [x] Simular fallo tras publicar y antes de confirmar el cambio en base permite republicar el mismo request_id/correlation_id; se documenta como entrega al menos una vez.
+- [x] Un nuevo ciclo no republica filas ya marcadas. El escenario no exige que el worker esté disponible ni promete que no existan mensajes repetidos.
+- [x] Pruebas existentes y evidencia reproducible con PostgreSQL/RabbitMQ reales cubren el comportamiento. Se registran comandos, resultados y correcciones realizadas, si fueron necesarias.
 
 ## Blocked by
 
 None
+
 
