@@ -95,6 +95,7 @@ export function BatchDetailPage() {
   const poll = usePollBatch(id);
   return (
     <div className="page">
+      {poll.kind !== 'ok' && <h1 className="sr-only">Detalle del lote</h1>}
       {poll.kind === 'loading' && <><BackLink /><SkeletonList label="Cargando lote…" rows={5} height={44} /></>}
       {poll.kind === 'error' && (
         <>

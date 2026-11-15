@@ -48,3 +48,13 @@ Escenarios (combinables, separados por coma): `?mock=offline,slow`. Se guardan e
 | `strict-contract` | Omite `institution`, `issued_at` y `created_at` |
 
 Sin escenario, la validación del CSV es real: los 4 motivos (`INVALID_EMAIL`, `DUPLICATE_IN_FILE`, `NO_ACCOUNT`, `ALREADY_REQUESTED`) salen de los datos (p. ej. curso «Introducción a Criptografía Aplicada» con fecha 2026-10-30 ya tiene a `alumno01..48`). `verifyFile` da `VALID`, `ALTERED` si el nombre del archivo contiene «alterado»/«altered», y `NOT_FOUND` si el id no existe. La misma `Idempotency-Key` devuelve el mismo lote sin crear otro.
+
+## TODO(equipo) pendientes (`grep -rn "TODO(equipo)" frontend/src`)
+
+- `frontend/src/api/types.ts`: `created_at` (detalle de lote), `institution` (mis certificados) e `issued_at` (verificación pública) no están en contracts §5; el frontend los muestra solo si vienen.
+- `frontend/src/config/pending.ts`: CSV `nombre`+`email` (diseño) vs solo `email` (contrato); formato exacto, ejemplo y texto de ayuda; enlace/archivo de ejemplo definitivo (hoy se genera en el navegador).
+- `frontend/src/app/routes.tsx` y `features/verify/VerifyLookup.tsx`: qué mostrar en `/verify` sin `cert_id`.
+
+## Guards y pantallas globales
+
+Sin sesión o con rol incorrecto en una ruta protegida: 403 en el lugar (sin redirigir). Ruta inexistente: 404. `/` redirige a la home del rol (o a `/login`). `/verify/:certId` es público. Errores inesperados: `errorElement` del router y `ErrorBoundary` global (pantalla genérica; el detalle solo va a `console.error`). El escenario `csv-reject` del mock devuelve siempre las mismas 4 filas, por eso el conteo ("4 de N filas") no depende del archivo subido.
