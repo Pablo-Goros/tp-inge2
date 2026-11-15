@@ -1,7 +1,7 @@
 # 06: Demostrar publicación tras una caída del broker
 
 **Spec:** [Frente B: API, base de datos y publicación](../spec.md)
-**Status:** ready-for-agent
+**Status:** in-progress
 
 ## What to build
 
@@ -21,3 +21,4 @@ Usar servicios aislados de prueba y los mecanismos de seguridad existentes de la
 ## Blocked by
 
 None
+

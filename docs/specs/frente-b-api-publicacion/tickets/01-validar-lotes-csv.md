@@ -1,7 +1,7 @@
 # 01: Aceptar CSV estricto y fechas válidas
 
 **Spec:** [Frente B: API, base de datos y publicación](../spec.md)
-**Status:** ready-for-agent
+**Status:** in-progress
 
 ## What to build
 
@@ -23,3 +23,4 @@ Sincronizar el [contrato](../../../contracts.md) con los límites y reglas imple
 ## Blocked by
 
 None
+

@@ -1,7 +1,7 @@
 # 04: Consultar la verificación pública por identificador
 
 **Spec:** [Frente B: API, base de datos y publicación](../spec.md)
-**Status:** ready-for-agent
+**Status:** in-progress
 
 ## What to build
 
@@ -22,3 +22,4 @@ Este ticket puede avanzar sin el worker real: comprobar el contrato HTTP con una
 ## Blocked by
 
 None
+
