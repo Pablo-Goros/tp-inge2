@@ -1,0 +1,22 @@
+/* Tokens extraídos de design/Main.dc.html */
+:root {
+  --bg: #000;
+  --g1: #afd587;
+  --g2: #dbffc9;
+  --s1: #0b0f0a;
+  --s2: #121810;
+  --bd: #2c3628;
+  --mu: #a3ae9d;
+  --red: #ff8080;
+  --amb: #ffc757;
+  --cy: #92d6ff;
+  --gry: #bcc3cc;
+  --grad: linear-gradient(90deg, #afd587, #dbffc9);
+
+  --font-body: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-display: 'Archivo Black', Inter, system-ui, sans-serif;
+
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 10px;
+}
