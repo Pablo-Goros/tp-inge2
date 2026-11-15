@@ -28,6 +28,15 @@ def verify(cert_id: uuid.UUID, service: Verification = Depends(get_verification)
 
 
 @router.post("/verify/{cert_id}/file", tags=["verify"], response_model=VerifyFileResponse,
-             responses={**_PUBLIC, 400: {"model": ErrorResponse}, 501: {"model": ErrorResponse}})
-def verify_file(cert_id: uuid.UUID, file: UploadFile = File()):
-    raise ApiError(501, "UNAVAILABLE", "No implementado todavía")
+             responses={**_PUBLIC, 400: {"model": ErrorResponse}})
+async def verify_file(cert_id: uuid.UUID, file: UploadFile = File(),
+                      service: Verification = Depends(get_verification)):
+    # Read at most the limit plus one byte; never retain an unbounded upload.
+    content = await file.read(5_242_880 + 1)
+    if len(content) > 5_242_880:
+        raise ApiError(400, "VALIDATION_ERROR", "El archivo supera 5.242.880 bytes")
+    try:
+        result = service.compare_file(cert_id, content)
+    except VerificationUnavailable:
+        raise ApiError(503, "UNAVAILABLE", "Verificacion temporalmente no disponible")
+    return VerifyFileResponse(result=result)

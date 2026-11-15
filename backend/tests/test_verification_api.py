@@ -62,3 +62,72 @@ def test_public_lookup_documents_uniform_errors_and_no_placeholder():
     operation = create_app().openapi()['paths']['/api/verify/{cert_id}']['get']
     assert set(operation['responses']) == {'200', '400', '404', '503'}
     assert operation.get('security', []) == []
+
+def test_matching_uploaded_bytes_are_valid_without_authentication():
+    class FileVerification:
+        def compare_file(self, cert_id, content):
+            assert cert_id == CERT_ID
+            assert content == b'%PDF-received'
+            return 'VALID'
+    response = public_client(FileVerification()).post(
+        f'/api/verify/{CERT_ID}/file', files={'file': ('document.txt', b'%PDF-received', 'text/plain')},
+    )
+    assert response.status_code == 200
+    assert response.json() == {'result': 'VALID'}
+
+def test_uploaded_file_one_byte_over_limit_is_rejected_before_verification():
+    response = public_client().post(f'/api/verify/{CERT_ID}/file',
+                                   files={'file': ('large.pdf', b'x' * (5_242_880 + 1))})
+    assert response.status_code == 400
+    assert response.json()['error']['code'] == 'VALIDATION_ERROR'
+
+@pytest.mark.parametrize('result', ['ALTERED', 'NOT_FOUND'])
+def test_file_comparison_preserves_case_of_use_result(result):
+    class FileVerification:
+        def compare_file(self, cert_id, content):
+            return result
+    response = public_client(FileVerification()).post(f'/api/verify/{CERT_ID}/file',
+                                                     files={'file': ('x', b'changed')})
+    assert response.status_code == 200
+    assert response.json() == {'result': result}
+
+
+def test_exact_upload_limit_is_accepted():
+    class FileVerification:
+        def compare_file(self, cert_id, content):
+            assert len(content) == 5_242_880
+            return 'VALID'
+    response = public_client(FileVerification()).post(f'/api/verify/{CERT_ID}/file',
+                                                     files={'file': ('x', b'x' * 5_242_880)})
+    assert response.status_code == 200
+    assert response.json() == {'result': 'VALID'}
+
+
+@pytest.mark.parametrize('service', [None])
+def test_missing_verification_integration_returns_unavailable_for_upload(service):
+    response = public_client(service).post(f'/api/verify/{CERT_ID}/file', files={'file': ('x', b'x')})
+    assert response.status_code == 503
+    assert response.json()['error']['code'] == 'UNAVAILABLE'
+
+
+def test_registry_failure_returns_unavailable_for_upload():
+    class FileVerification:
+        def compare_file(self, cert_id, content):
+            raise VerificationUnavailable
+    response = public_client(FileVerification()).post(f'/api/verify/{CERT_ID}/file', files={'file': ('x', b'x')})
+    assert response.status_code == 503
+    assert response.json()['error']['code'] == 'UNAVAILABLE'
+
+
+@pytest.mark.parametrize('path,files', [('/api/verify/not-a-uuid/file', {'file': ('x', b'x')}),
+                                        (f'/api/verify/{CERT_ID}/file', None)])
+def test_invalid_file_form_uses_common_validation_error(path, files):
+    response = public_client().post(path, files=files)
+    assert response.status_code == 400
+    assert response.json()['error']['code'] == 'VALIDATION_ERROR'
+
+
+def test_file_verification_openapi_has_no_placeholder():
+    operation = create_app().openapi()['paths']['/api/verify/{cert_id}/file']['post']
+    assert set(operation['responses']) == {'200', '400', '404', '503'}
+    assert operation.get('security', []) == []
