@@ -197,8 +197,8 @@ El frontend consulta este endpoint cada 2 s mientras el estado sea `IN_PROGRESS`
   "student_name": "...", "institution": "...", "course_name": "...", "completion_date": "2026-10-30" }
 ```
 
-- `404` con `status: "NOT_FOUND"` si no está en `registry`. **Nunca** se devuelve email ni datos de cuenta.
-- `503 UNAVAILABLE` si el registro no responde (no confundir con «no registrado»).
+- `404` con `{ "error": { "code": "NOT_FOUND", "message": "Certificado no registrado", "details": [] } }` si no está en el registro. **Nunca** se devuelve email, nota ni datos de cuenta. UUID inválido: `400 VALIDATION_ERROR`.
+- `503 UNAVAILABLE` si el registro no responde o la integración de los casos de uso de C aún no está disponible (no confundir con «no registrado»). B delega en C mediante `get_verification`; no usa la existencia de un certificado local como prueba de registro. Los falsos solo se usan en pruebas.
 
 **`POST /verify/{cert_id}/file`** (público) — `multipart/form-data`: `file` (PDF, máx. 5 MB). `200`:
 
@@ -250,7 +250,7 @@ class Registry(Protocol):
 | Frente | Consume | Mock hasta la integración |
 | --- | --- | --- |
 | A | Endpoints de §5 y errores | OpenAPI exportado de B o respuestas JSON fijas (MSW) con los ejemplos de este documento |
-| B | Esquema §3, mensaje §4, interfaz `Registry` §7 (para `/verify`) | `SimulatedRegistry` de C, o un stub con dict |
+| B | Esquema §3, mensaje §4, interfaz `Registry` §7 (para `/verify`) | `SimulatedRegistry` de C; sin C responde 503 (falsos solo en pruebas) |
 | C | Esquema §3, mensaje §4, algoritmo §4, `Registry` §7 | Script que inserta una `cert_request` en PostgreSQL y publica un mensaje a mano |
 | D | Puertos y variables §1, topología §4, seed §8 | Contenedores placeholder |
 
