@@ -1,6 +1,6 @@
 # Contratos entre frentes (Paso 0)
 
-Versión 1.1, 13/11/2026 (1.1: corrige el ruteo de reintento/DLQ en §4). **Aprobado** por el usuario el 13/11/2026; falta que los otros tres integrantes lo lean y confirmen. Es la fuente única para los frentes A (frontend), B (API/DB/publicación), C (worker/registro/verificación) y D (infra/documentos). Ver [división del trabajo](division-del-trabajo.md).
+Version 1.2, 15/11/2026. Los cambios de Parte B fueron revisados por su responsable; no se atribuye aprobacion a los otros frentes. Ver [spec B](specs/frente-b-api-publicacion/spec.md) y [division del trabajo](division-del-trabajo.md).
 
 Las decisiones marcadas **[Decisión propuesta]** son supuestos de quien redactó el documento; no fueron confirmadas por el equipo. Revisarlas antes de aprobar.
 
@@ -161,9 +161,9 @@ Prefijo `/api`. JSON salvo donde se indica. Errores con formato único:
 | `GET /verify/{cert_id}` | público | Datos académicos registrados |
 | `POST /verify/{cert_id}/file` | público | Comparar PDF subido con la huella registrada |
 
-**`POST /batches`** — `multipart/form-data`: `course_name` (texto, 1–200), `completion_date` (`YYYY-MM-DD`), `file` (CSV). Cabecera obligatoria `Idempotency-Key` (texto, uuid recomendado).
+**`POST /batches`** — `multipart/form-data`: `course_name` (texto, 1–200), `completion_date` (`YYYY-MM-DD`, no futura segun el dia de Buenos Aires), `file` (CSV). Cabecera obligatoria `Idempotency-Key` (texto no vacio, espacios exteriores quitados, hasta 255 caracteres; uuid recomendado).
 
-- CSV: UTF-8, con cabecera, **una columna `email`**, máximo **100 filas** de datos. **[Decisión propuesta]** (el nombre del alumno sale de su cuenta precargada, no del CSV).
+- CSV: UTF-8 con o sin BOM, LF/CRLF; exactamente una columna `email` (espacios y mayusculas tolerados); entre **1 y 100 filas** y hasta **1.048.576 bytes**. Cabeceras desconocidas/repetidas y filas con campos de mas/de menos se rechazan. Lineas vacias finales se ignoran; intermedias se rechazan conservando posicion. No se crean alumnos. Nota opcional: [ticket 02](specs/frente-b-api-publicacion/tickets/02-nota-final-opcional.md).
 - Todo o nada. Se informa y no se crea nada si: fila con email mal formado, email sin cuenta de alumno, email repetido dentro del CSV, o combinación alumno/curso/fecha ya existente.
 - `details`: `[ { "row": 3, "email": "x@y.com", "reason": "NO_ACCOUNT" | "DUPLICATE_IN_FILE" | "ALREADY_REQUESTED" | "INVALID_EMAIL" } ]` (`row` cuenta desde 1 sin la cabecera).
 - Idempotencia: `request_fingerprint` = SHA-256 de `course_name` normalizado + fecha + bytes del CSV. Misma clave y mismo fingerprint → `200` con el lote original (sin crear nada). Misma clave, otro fingerprint → `409`.
@@ -259,4 +259,6 @@ class Registry(Protocol):
 - Contraseñas y secretos reales para cloud (D, canal privado).
 - Diseño visual del PDF y de las pantallas (A, C).
 - Versiones exactas de imágenes y dependencias: fijarlas al iniciar el arranque limpio (D), no `latest`.
-- Límite de tamaño del CSV por encima de 100 filas y rendimiento: no se especifica.
+- CSV mayor a 1.048.576 bytes o 100 filas; rendimiento fuera del alcance de la demo.
+
+Validacion estructural CSV: archivo/cabecera usan fila 0; filas de datos empiezan en 1. Motivos: `EMPTY_FILE`, `INVALID_ENCODING`, `MALFORMED_CSV`, `MISSING_EMAIL_COLUMN`, `DUPLICATE_COLUMN`, `UNKNOWN_COLUMN`, `NO_DATA_ROWS`, `TOO_MANY_ROWS`, `EMPTY_ROW`, `INVALID_FIELD_COUNT`. Las solicitudes FAILED tambien bloquean duplicados.

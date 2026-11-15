@@ -53,7 +53,7 @@ def _replay_or_conflict(session: Session, existing: Batch, fp: str) -> AcceptRes
     return AcceptResult(existing.id, derive_batch_status(counts), counts.total, replayed=True)
 
 
-def _issues(session, institution_id, emails, ckey, completion_date) -> tuple[list[RowIssue], dict]:
+def _issues(session, institution_id, emails, ckey, completion_date, excluded_rows=None) -> tuple[list[RowIssue], dict]:
     wanted = {normalize_email(e) for e in emails}
     known = {
         email: sid
@@ -72,7 +72,7 @@ def _issues(session, institution_id, emails, ckey, completion_date) -> tuple[lis
             )
         )
     }
-    return validate_rows(emails, known, existing, ckey, completion_date), known
+    return validate_rows(emails, known, existing, ckey, completion_date, excluded_rows), known
 
 
 def accept_batch(
@@ -87,13 +87,18 @@ def accept_batch(
     if existing is not None:
         return _replay_or_conflict(session, existing, fp)
 
+    structural_issues = []
     try:
         emails = parse_csv(csv_bytes)
     except CsvFormatError as e:
-        raise ApiError(400, "VALIDATION_ERROR", "CSV inválido", [{"row": 0, "reason": e.reason}]) from None
+        if e.emails is None:
+            raise ApiError(400, "VALIDATION_ERROR", "CSV inválido", [{"row": e.row, "reason": e.reason}]) from None
+        emails, structural_issues = e.emails, e.issues
 
     institution_id = session.scalar(select(User.institution_id).where(User.id == operator_id))
-    issues, known = _issues(session, institution_id, emails, ckey, completion_date)
+    issues, known = _issues(session, institution_id, emails, ckey, completion_date,
+                             {i.row for i in structural_issues})
+    issues = sorted(structural_issues + issues, key=lambda i: i.row)
     if issues:
         raise _validation_error(issues)
 

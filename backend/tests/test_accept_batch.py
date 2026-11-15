@@ -171,11 +171,11 @@ def test_csv_format_error_400_row_zero(client, session, users, students, csv):
     assert _counts(session) == before
 
 
-def test_csv_field_over_limit_is_malformed_400(client, session, users, students):
+def test_long_csv_field_is_invalid_email_400(client, session, users, students):
     csv = b"email\n" + b"a" * 200_000 + b"\n"
     r = _post(client, _token(client), csv)
     assert r.status_code == 400
-    assert r.json()["error"]["details"] == [{"row": 0, "reason": "MALFORMED_CSV"}]
+    assert [(i["row"], i["reason"]) for i in r.json()["error"]["details"]] == [(1, "INVALID_EMAIL")]
 
 
 def test_too_many_rows_400(client, session, users, students):
@@ -327,4 +327,43 @@ def test_completion_date_strict_format_400(client, session, users, students, d):
     before = _counts(session)
     r = _post(client, _token(client), _csv(2), date=d)
     assert r.status_code == 400 and r.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert _counts(session) == before
+
+
+def test_future_completion_date_rejected_using_buenos_aires_day(client, session, users, students, monkeypatch):
+    import app.api.batches as batches
+    monkeypatch.setattr(batches, 'today_buenos_aires', lambda: dt.date(2026, 10, 30))
+    before = _counts(session)
+    r = _post(client, _token(client), _csv(1), date='2026-10-31')
+    assert r.status_code == 400
+    assert r.json()['error']['code'] == 'VALIDATION_ERROR'
+    assert _counts(session) == before
+
+
+@pytest.mark.parametrize(('csv_bytes', 'reason', 'row'), [
+    (b'email, EMAIL \ns0@itba.test,s0@itba.test', 'DUPLICATE_COLUMN', 0),
+    (b'email,unknown\ns0@itba.test,x', 'UNKNOWN_COLUMN', 0),
+    (b'email\ns0@itba.test\n\ns1@itba.test', 'EMPTY_ROW', 2),
+    (b'email\ns0@itba.test\ns1@itba.test,extra', 'INVALID_FIELD_COUNT', 2),
+])
+def test_structural_csv_errors_leave_no_partial_data(client, session, users, students, csv_bytes, reason, row):
+    before = _counts(session)
+    r = _post(client, _token(client), csv_bytes)
+    assert r.status_code == 400
+    assert [(i['row'], i['reason']) for i in r.json()['error']['details']] == [(row, reason)]
+    assert _counts(session) == before
+
+
+def test_csv_exact_byte_limit_accepted(client, session, users, students):
+    data = b'email\ns0@itba.test' + b' ' * (1048576 - len(b'email\ns0@itba.test'))
+    r = _post(client, _token(client), data)
+    assert r.status_code == 201, r.text
+
+
+def test_structural_and_semantic_errors_accumulated(client, session, users, students):
+    before = _counts(session)
+    r = _post(client, _token(client), b'email\n\ninvalid\ns0@itba.test,extra\nmissing@itba.test')
+    assert r.status_code == 400
+    assert [(i['row'], i['reason']) for i in r.json()['error']['details']] == [
+        (1, 'EMPTY_ROW'), (2, 'INVALID_EMAIL'), (3, 'INVALID_FIELD_COUNT'), (4, 'NO_ACCOUNT')]
     assert _counts(session) == before

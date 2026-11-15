@@ -1,6 +1,8 @@
 import datetime as dt
 import uuid
 
+from zoneinfo import ZoneInfo
+
 from fastapi import APIRouter, Depends, File, Form, Header, Response, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -20,6 +22,10 @@ router = APIRouter()
 MAX_UPLOAD_BYTES = 1024 * 1024
 
 
+def today_buenos_aires() -> dt.date:
+    return dt.datetime.now(ZoneInfo("America/Argentina/Buenos_Aires")).date()
+
+
 def _bad(message: str) -> ApiError:
     return ApiError(400, "VALIDATION_ERROR", message)
 
@@ -35,8 +41,8 @@ def _bad(message: str) -> ApiError:
 def create_batch(
     response: Response,
     course_name: str = Form(min_length=1, max_length=200),
-    completion_date: str = Form(pattern=r"^\d{4}-\d{2}-\d{2}$", json_schema_extra={"format": "date"}),
-    file: UploadFile = File(),
+    completion_date: str = Form(description="Fecha YYYY-MM-DD no futura (dia de Buenos Aires)", pattern=r"^\d{4}-\d{2}-\d{2}$", json_schema_extra={"format": "date"}),
+    file: UploadFile = File(description="CSV UTF-8/BOM, una columna email, 1-100 filas, hasta 1.048.576 bytes; sin filas vacias intermedias"),
     idempotency_key: str = Header(alias="Idempotency-Key"),
     operator: User = Depends(require_role("operator")),
     session: Session = Depends(get_session),
@@ -49,6 +55,8 @@ def create_batch(
         date = dt.date.fromisoformat(completion_date)
     except ValueError:
         raise _bad("completion_date debe ser una fecha YYYY-MM-DD válida") from None
+    if date > today_buenos_aires():
+        raise _bad("completion_date no puede ser futura (Buenos Aires)")
     if not course_name.strip():
         raise _bad("course_name no puede estar vacío")
     data = file.file.read(MAX_UPLOAD_BYTES + 1)
