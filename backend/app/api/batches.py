@@ -42,7 +42,7 @@ def create_batch(
     response: Response,
     course_name: str = Form(min_length=1, max_length=200),
     completion_date: str = Form(description="Fecha YYYY-MM-DD no futura (dia de Buenos Aires)", pattern=r"^\d{4}-\d{2}-\d{2}$", json_schema_extra={"format": "date"}),
-    file: UploadFile = File(description="CSV UTF-8/BOM, una columna email, 1-100 filas, hasta 1.048.576 bytes; sin filas vacias intermedias"),
+    file: UploadFile = File(description="CSV UTF-8/BOM, email y final_grade opcional (0-10, hasta dos decimales), 1-100 filas, hasta 1.048.576 bytes; sin filas vacias intermedias"),
     idempotency_key: str = Header(alias="Idempotency-Key"),
     operator: User = Depends(require_role("operator")),
     session: Session = Depends(get_session),
@@ -61,7 +61,8 @@ def create_batch(
         raise _bad("course_name no puede estar vacío")
     data = file.file.read(MAX_UPLOAD_BYTES + 1)
     if len(data) > MAX_UPLOAD_BYTES:
-        raise _bad("El CSV supera el tamaño máximo de 1 MB")
+        raise ApiError(400, "VALIDATION_ERROR", "El CSV supera 1.048.576 bytes",
+                       [{"row": 0, "reason": "FILE_TOO_LARGE"}])
     res = accept_batch(session, operator.id, course_name, date, data, idempotency_key.strip())
     if res.replayed:
         response.status_code = 200
@@ -112,7 +113,7 @@ def get_batch(batch_id: uuid.UUID, operator: User = Depends(require_role("operat
     ).all()
     items = [
         BatchItem(certificate_id=r.id, student_name=name, student_email=email, status=r.status,
-                  attempts=r.attempts, last_error=r.last_error)
+                  attempts=r.attempts, last_error=r.last_error, final_grade=r.final_grade)
         for r, name, email in rows
     ]
     return BatchDetail(

@@ -69,7 +69,7 @@ Propiedad: B define y migra; C lee y escribe solo `cert_requests` (estado), `cer
 | `institutions` | `id`, `name` | Una fila precargada |
 | `users` | `id`, `institution_id`, `email` (único, minúsculas), `name`, `password_hash`, `role` (`operator`/`student`) | Un operador y N alumnos precargados |
 | `batches` | `id`, `operator_id`, `course_name`, `completion_date` (date), `idempotency_key`, `request_fingerprint`, `created_at` | Único `(operator_id, idempotency_key)` |
-| `cert_requests` | `id` **= identificador del certificado**, `batch_id`, `student_id`, `course_key`, `completion_date`, `status`, `attempts` (int, 0), `last_error` (text, null), `created_at`, `updated_at` | Único `(student_id, course_key, completion_date)` |
+| `cert_requests` | `id` **= identificador del certificado**, `batch_id`, `student_id`, `course_key`, `completion_date`, `status`, `attempts` (int, 0), `last_error` (text, null), `final_grade` (numeric(4,2), null, CHECK 0-10), `created_at`, `updated_at` | Único `(student_id, course_key, completion_date)` |
 | `outbox` | `id`, `request_id`, `correlation_id` (uuid), `created_at`, `published_at` (null hasta confirmar) | Una fila por solicitud, creada en la misma transacción que el lote |
 | `certificates` | `request_id` (PK, FK), `pdf` (bytea), `sha256` (text), `issued_at` | Bytes definitivos; se escriben una sola vez |
 | `registry` | `cert_id` (PK), `sha256`, `registered_at` | Registro simulado, solo inserción (ver §7) |
@@ -163,7 +163,7 @@ Prefijo `/api`. JSON salvo donde se indica. Errores con formato único:
 
 **`POST /batches`** — `multipart/form-data`: `course_name` (texto, 1–200), `completion_date` (`YYYY-MM-DD`, no futura segun el dia de Buenos Aires), `file` (CSV). Cabecera obligatoria `Idempotency-Key` (texto no vacio, espacios exteriores quitados, hasta 255 caracteres; uuid recomendado).
 
-- CSV: UTF-8 con o sin BOM, LF/CRLF; exactamente una columna `email` (espacios y mayusculas tolerados); entre **1 y 100 filas** y hasta **1.048.576 bytes**. Cabeceras desconocidas/repetidas y filas con campos de mas/de menos se rechazan. Lineas vacias finales se ignoran; intermedias se rechazan conservando posicion. No se crean alumnos. Nota opcional: [ticket 02](specs/frente-b-api-publicacion/tickets/02-nota-final-opcional.md).
+- CSV: UTF-8 con o sin BOM, LF/CRLF; una columna obligatoria `email` y solo una columna adicional opcional `final_grade` (espacios y mayusculas tolerados); entre **1 y 100 filas** y hasta **1.048.576 bytes**. Cabeceras desconocidas/repetidas y filas con campos de mas/de menos se rechazan. Lineas vacias finales se ignoran; intermedias se rechazan conservando posicion. No se crean alumnos. `final_grade` omitida o vacia es null; si se informa admite decimal 0-10 inclusive, punto y hasta dos decimales, sin exponentes ni redondeo. No define umbral de aprobacion.
 - Todo o nada. Se informa y no se crea nada si: fila con email mal formado, email sin cuenta de alumno, email repetido dentro del CSV, o combinación alumno/curso/fecha ya existente.
 - `details`: `[ { "row": 3, "email": "x@y.com", "reason": "NO_ACCOUNT" | "DUPLICATE_IN_FILE" | "ALREADY_REQUESTED" | "INVALID_EMAIL" } ]` (`row` cuenta desde 1 sin la cabecera).
 - Idempotencia: `request_fingerprint` = SHA-256 de `course_name` normalizado + fecha + bytes del CSV. Misma clave y mismo fingerprint → `200` con el lote original (sin crear nada). Misma clave, otro fingerprint → `409`.
@@ -179,7 +179,7 @@ Prefijo `/api`. JSON salvo donde se indica. Errores con formato único:
   "counts": { "total": 20, "pending": 0, "processing": 1, "issued": 18, "failed": 1 },
   "items": [
     { "certificate_id": "<uuid>", "student_name": "...", "student_email": "...",
-      "status": "ISSUED", "attempts": 1, "last_error": null }
+      "status": "ISSUED", "attempts": 1, "last_error": null, "final_grade": 9.75 }
   ]
 }
 ```
@@ -264,3 +264,5 @@ class Registry(Protocol):
 - CSV mayor a 1.048.576 bytes o 100 filas; rendimiento fuera del alcance de la demo.
 
 Validacion estructural CSV: archivo/cabecera usan fila 0; filas de datos empiezan en 1. Motivos: `EMPTY_FILE`, `INVALID_ENCODING`, `MALFORMED_CSV`, `MISSING_EMAIL_COLUMN`, `DUPLICATE_COLUMN`, `UNKNOWN_COLUMN`, `NO_DATA_ROWS`, `TOO_MANY_ROWS`, `EMPTY_ROW`, `INVALID_FIELD_COUNT`. Las solicitudes FAILED tambien bloquean duplicados.
+
+Nota final: `INVALID_GRADE` se acumula con errores de las otras filas y no crea datos parciales. La nota se incluye solo en items del detalle autorizado como numero o null, nunca en listados ni verificacion publica. AMQP conserva exactamente request_id y correlation_id. A debe mostrar la nota opcional en el detalle. C debe leer `cert_requests.final_grade` y representarla en el PDF antes de calcular la huella, omitiendo la etiqueta cuando es null. No se regeneran PDFs previos. La nota no cambia identidad ni permite reemision. Migracion 0003 conserva solicitudes previas con nota null.

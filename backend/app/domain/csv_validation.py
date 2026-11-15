@@ -11,7 +11,7 @@ from app.domain.normalize import normalize_email
 MAX_ROWS = 100
 csv.field_size_limit(1_048_576)
 
-Reason = Literal["NO_ACCOUNT", "DUPLICATE_IN_FILE", "ALREADY_REQUESTED", "INVALID_EMAIL", "EMPTY_ROW", "INVALID_FIELD_COUNT"]
+Reason = Literal["NO_ACCOUNT", "DUPLICATE_IN_FILE", "ALREADY_REQUESTED", "INVALID_EMAIL", "EMPTY_ROW", "INVALID_FIELD_COUNT", "INVALID_GRADE"]
 
 
 class CsvFormatError(Exception):
@@ -20,7 +20,7 @@ class CsvFormatError(Exception):
         self.reason = reason
         self.row = row
         self.issues: list[RowIssue] = []
-        self.emails: list[str] | None = None
+        self.rows: list[CsvRow] | None = None
 
 
 @dataclass(frozen=True)
@@ -30,7 +30,17 @@ class RowIssue:
     reason: Reason
 
 
+@dataclass(frozen=True)
+class CsvRow:
+    email: str
+    final_grade: str = ""
+
+
 def parse_csv(data: bytes) -> list[str]:
+    return [row.email for row in parse_csv_rows(data)]
+
+
+def parse_csv_rows(data: bytes) -> list[CsvRow]:
     try:
         text = data.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -48,28 +58,30 @@ def parse_csv(data: bytes) -> list[str]:
         raise CsvFormatError("MISSING_EMAIL_COLUMN")
     if len(set(header)) != len(header):
         raise CsvFormatError("DUPLICATE_COLUMN")
-    if set(header) != {"email"}:
+    if set(header) - {"email", "final_grade"}:
         raise CsvFormatError("UNKNOWN_COLUMN")
     idx = header.index("email")
-    emails = []
+    parsed = []
     issues = []
     for number, fields in enumerate(rows[1:], start=1):
         email = fields[idx].strip() if idx < len(fields) else ""
-        emails.append(email)
+        grade_index = header.index("final_grade") if "final_grade" in header else None
+        grade = fields[grade_index].strip() if grade_index is not None and grade_index < len(fields) else ""
+        parsed.append(CsvRow(email, grade))
         if not fields:
             issues.append(RowIssue(number, email, "EMPTY_ROW"))
         elif len(fields) != len(header):
             issues.append(RowIssue(number, email, "INVALID_FIELD_COUNT"))
-    if not emails:
+    if not parsed:
         raise CsvFormatError("NO_DATA_ROWS")
-    if len(emails) > MAX_ROWS:
+    if len(parsed) > MAX_ROWS:
         raise CsvFormatError("TOO_MANY_ROWS")
     if issues:
         error = CsvFormatError(issues[0].reason, issues[0].row)
         error.issues = issues
-        error.emails = emails
+        error.rows = parsed
         raise error
-    return emails
+    return parsed
 
 
 def _is_valid_email(e: str) -> bool:

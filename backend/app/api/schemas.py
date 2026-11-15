@@ -47,6 +47,7 @@ class BatchItem(BaseModel):
     student_email: str
     status: Literal["PENDING", "PROCESSING", "ISSUED", "FAILED"]
     attempts: int
+    final_grade: float | None = None
     last_error: str | None
 
 

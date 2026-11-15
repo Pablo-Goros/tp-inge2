@@ -1,9 +1,10 @@
 import datetime as dt
 import enum
+from decimal import Decimal
 import uuid
 
 from sqlalchemy import (
-    CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, LargeBinary, Text,
+    CheckConstraint, Date, DateTime, ForeignKey, Index, Integer, LargeBinary, Numeric, Text,
     UniqueConstraint, func, text,
 )
 from sqlalchemy.dialects.postgresql import UUID
@@ -64,6 +65,7 @@ class CertRequest(Base):
     __tablename__ = "cert_requests"
     __table_args__ = (
         UniqueConstraint("student_id", "course_key", "completion_date", name="uq_cert_requests_student_course_date"),
+        CheckConstraint("final_grade >= 0 AND final_grade <= 10", name="ck_cert_requests_final_grade"),
         CheckConstraint("status IN ('PENDING','PROCESSING','ISSUED','FAILED')", name="ck_cert_requests_status"),
     )
     id: Mapped[uuid.UUID] = _uuid_pk()
@@ -74,6 +76,7 @@ class CertRequest(Base):
     status: Mapped[RequestStatus] = mapped_column(
         Text, default=RequestStatus.PENDING, server_default=RequestStatus.PENDING.value
     )
+    final_grade: Mapped[Decimal | None] = mapped_column(Numeric(4, 2), nullable=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[dt.datetime] = _now()
