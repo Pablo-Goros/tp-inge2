@@ -9,12 +9,13 @@ const ROLE_COPY: Record<Role, { label: string; only: string; link: string }> = {
 };
 
 /** Sin sesión o rol incorrecto: renderiza 403 en el lugar (no redirige). El backend igual valida el rol. */
-export function RequireRole({ role, children }: { role: Role; children: ReactNode }) {
+/** `role="any"`: alcanza con tener sesión (home, perfil). */
+export function RequireRole({ role, children }: { role: Role | 'any'; children: ReactNode }) {
   const { user } = useAuth();
   if (!user) {
     return <ForbiddenPage message="Para ver esta página tenés que ingresar con una cuenta autorizada." actionTo="/login" actionLabel="Ir a ingresar" />;
   }
-  if (user.role !== role) {
+  if (role !== 'any' && user.role !== role) {
     const c = ROLE_COPY[user.role];
     return (
       <ForbiddenPage

@@ -1,7 +1,10 @@
 import {
   Alert, Button, Card, EmptyState, ErrorState, Field, FileDropzone, SegmentedProgress, SkeletonList,
   CertStatusBadge, BatchStatusBadge, VerifyResultBadge, Table, Topbar,
+  Avatar, Chip, Cover, LevelMeter, ProgressRing, SectionCard, Timeline, TimelineItem,
 } from '../components/ui';
+import { avatarDataUri } from '../api/mock/avatars';
+import { COVER_STYLES } from '../api/profileUtils';
 
 const counts = { total: 48, pending: 13, processing: 2, issued: 31, failed: 2 };
 const rows = [
@@ -13,7 +16,7 @@ const rows = [
 export function ComponentsGallery() {
   return (
     <>
-      <Topbar nav={[{ to: '/', label: 'Lotes' }, { to: '/nuevo', label: 'Nuevo lote' }]} user={{ name: 'Marcos Quiroga', roleLabel: 'Operador' }} onLogout={() => {}} />
+      <Topbar nav={[{ to: '/', label: 'Inicio' }, { to: '/dev/components', label: 'Lotes' }, { to: '/nuevo', label: 'Nuevo lote' }, { to: '/perfil', label: 'Mi perfil' }, { to: '/directorio', label: 'Directorio' }]} user={{ name: 'Marcos Quiroga', roleLabel: 'Operador' }} onLogout={() => {}} />
       <main className="page">
         <h1 className="disp page-title">Sistema de componentes</h1>
         <div className="row">
@@ -52,6 +55,31 @@ export function ComponentsGallery() {
         <FileDropzone accept=".pdf" maxBytes={5 * 1024 * 1024} title="Arrastrá tu PDF acá" hint="Solo .pdf · máximo 5 MB" onFile={() => {}} />
         <SkeletonList label="Cargando lotes…" />
         <EmptyState title="Todavía no hay lotes" description="Cargá un CSV de alumnos para emitir los primeros certificados." />
+
+        <h2 className="disp">Perfiles</h2>
+        <div className="row" style={{ alignItems: 'flex-end' }}>
+          {(['sm', 'md', 'lg', 'xl'] as const).map((z) => <Avatar key={z} size={z} name="Camila Ferreyra" src={avatarDataUri('Camila Ferreyra')} ring={z === 'xl'} />)}
+          <Avatar size="lg" name="Marcos Quiroga" src="/no-existe.png" />
+        </div>
+        <div className="row">
+          <Chip>Python</Chip><Chip tone="brand">Tutor</Chip><Chip tone="ok" icon="✓">Disponible</Chip>
+          <Chip tone="warn" icon="!">Cupo limitado</Chip><Chip tone="bad" icon="✕">Cerrado</Chip><Chip tone="info">Híbrida</Chip>
+        </div>
+        <div className="row">
+          {[1, 2, 3, 4, 5].map((n) => <span key={n} className="row" style={{ gap: 6 }}><LevelMeter value={n} /><span className="help">{n}/5</span></span>)}
+          <ProgressRing percent={72} />
+          <ProgressRing percent={100} size={64} />
+        </div>
+        <div className="row">
+          {COVER_STYLES.map((c) => <div key={c.id} style={{ width: 150 }}><Cover style={c.id} /><p className="help">{c.label}</p></div>)}
+        </div>
+        <SectionCard title="Experiencia" editTo="/profile/edit">
+          <Timeline label="Experiencia">
+            <TimelineItem title="Ayudante de cátedra" subtitle="Instituto Demo" meta="mar 2026 – actual" current>Laboratorios de redes y criptografía.</TimelineItem>
+            <TimelineItem title="Pasante de soporte" subtitle="Estudio Marín" meta="ene 2025 – dic 2025">Backups automatizados.</TimelineItem>
+          </Timeline>
+        </SectionCard>
+        <a href="#top" className="card card-link"><strong>Tarjeta enlazada</strong><p className="help">Sube 2 px al pasar el mouse; <span className="lnk-draw">este enlace dibuja su subrayado</span>.</p></a>
       </main>
     </>
   );

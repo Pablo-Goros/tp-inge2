@@ -64,4 +64,29 @@ export const httpClient: ApiClient = {
       throw e;
     }
   },
+
+  // Perfiles. TODO(equipo): endpoints propuestos, el backend aún no los tiene (docs/frontend-api.md §Perfiles).
+  async getMyProfile() { return json(await request('/me/profile')); },
+  async updateMyProfile(patch) {
+    return json(await request('/me/profile', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(patch) }));
+  },
+  async uploadAvatar(file) {
+    const form = new FormData();
+    form.set('file', file);
+    return json(await request('/me/profile/avatar', { method: 'POST', body: form }));
+  },
+  async getPublicProfile(slug) { return json(await request(`/profiles/${encodeURIComponent(slug)}`, {}, false)); },
+  async searchProfiles(params = {}) {
+    const q = new URLSearchParams();
+    if (params.q) q.set('q', params.q);
+    if (params.role) q.set('role', params.role);
+    if (params.skill) q.set('skill', params.skill);
+    if (params.page) q.set('page', String(params.page));
+    const qs = q.toString();
+    return json(await request(`/profiles${qs ? `?${qs}` : ''}`, {}, false));
+  },
+  async checkSlugAvailable(slug) {
+    return (await json<{ available: boolean }>(await request(`/profiles/slug-available?slug=${encodeURIComponent(slug)}`))).available;
+  },
+  async getCertificateDetail(id) { return json(await request(`/certificates/${encodeURIComponent(id)}`)); },
 };

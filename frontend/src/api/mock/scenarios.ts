@@ -1,3 +1,5 @@
+import { resetProfiles } from './profileStore';
+
 /**
  * Escenarios del mock. Se eligen con `?mock=a,b` (se guarda en localStorage) o `localStorage.mock = 'a,b'`.
  * `?mock=` vacío o `?mock=default` los limpia. Se leen en cada llamada, así que cambian sin recargar.
@@ -15,6 +17,9 @@ export const SCENARIOS = {
   'verify-altered': 'verifyFile responde ALTERED.',
   'verify-notfound': 'verifyFile responde NOT_FOUND y getPublicCertificate 404.',
   'verify-unavailable': 'verifyFile responde UNAVAILABLE y getPublicCertificate 503.',
+  'profile-fail': 'Leer o guardar perfiles falla con 503 (getMyProfile, updateMyProfile, getPublicProfile, searchProfiles).',
+  'slug-taken': 'El slug elegido siempre figura como ocupado (checkSlugAvailable false; updateMyProfile 409 al cambiarlo).',
+  'avatar-fail': 'uploadAvatar falla con 503.',
   'strict-contract': 'Omite los campos que el contrato no trae (institution, issued_at, created_at).',
 } as const;
 
@@ -48,6 +53,8 @@ export function installMockHelper(): void {
       return [...readScenarios()];
     },
     get: () => [...readScenarios()],
+    /** Borra las ediciones de perfiles y vuelve a los perfiles de demostración. */
+    resetProfiles,
     list: SCENARIOS,
   };
   (window as unknown as { mockApi: typeof helper }).mockApi = helper;

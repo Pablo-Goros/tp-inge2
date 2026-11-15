@@ -33,6 +33,14 @@ function withUnauthorized(client: ApiClient, onUnauthorized: () => void): ApiCli
     downloadCertificatePdf: guard(client.downloadCertificatePdf.bind(client)),
     getPublicCertificate: guard(client.getPublicCertificate.bind(client)),
     verifyFile: guard(client.verifyFile.bind(client)),
+    // Perfiles: llamadas perezosas (los fakes de tests pueden no tenerlas). Las públicas no cierran la sesión ante un 401.
+    getMyProfile: guard(() => client.getMyProfile()),
+    updateMyProfile: guard((p) => client.updateMyProfile(p)),
+    uploadAvatar: guard((f) => client.uploadAvatar(f)),
+    getPublicProfile: (slug) => client.getPublicProfile(slug),
+    searchProfiles: (params) => client.searchProfiles(params),
+    checkSlugAvailable: guard((s) => client.checkSlugAvailable(s)),
+    getCertificateDetail: guard((id) => client.getCertificateDetail(id)),
   };
 }
 

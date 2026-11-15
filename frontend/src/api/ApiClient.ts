@@ -1,5 +1,6 @@
 import type {
-  BatchDetail, BatchSummary, CertificateItem, CsvIssue, LoginResponse, PublicCertificate, VerifyOutcome,
+  BatchDetail, BatchSummary, CertificateDetail, CertificateItem, CsvIssue, LoginResponse, Profile, ProfileSearchParams, ProfileSummary,
+  PublicCertificate, VerifyOutcome,
 } from './types';
 
 /** Códigos de error de docs/contracts.md §5, más 'NETWORK' (sin respuesta del servidor). */
@@ -63,4 +64,20 @@ export interface ApiClient {
   downloadCertificatePdf(id: string): Promise<Blob>;
   getPublicCertificate(certId: string): Promise<PublicCertificate>;
   verifyFile(certId: string, file: File): Promise<VerifyOutcome>;
+
+  // Perfiles (TODO(equipo): el backend aún no tiene estos endpoints; ver docs/frontend-api.md §Perfiles).
+  /** Con sesión. */
+  getMyProfile(): Promise<Profile>;
+  /** Con sesión. Acepta un parche parcial o el perfil completo. 400 VALIDATION_ERROR (details: {field, reason}[]; slug repetido = 409). */
+  updateMyProfile(patch: Partial<Profile>): Promise<Profile>;
+  /** Con sesión. jpg/png/webp, máx. 2 MB; el servidor guarda la foto como avatar del perfil. */
+  uploadAvatar(file: File): Promise<{ avatarUrl: string }>;
+  /** PÚBLICO (sin token). 404 si no existe. Sin email de cuenta. */
+  getPublicProfile(slug: string): Promise<Profile>;
+  /** PÚBLICO (sin token). */
+  searchProfiles(params?: ProfileSearchParams): Promise<ProfileSummary[]>;
+  /** Con sesión. */
+  checkSlugAvailable(slug: string): Promise<boolean>;
+  /** Con sesión (alumno: solo los propios). */
+  getCertificateDetail(id: string): Promise<CertificateDetail>;
 }

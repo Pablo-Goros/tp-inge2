@@ -1,12 +1,16 @@
 import { ApiError, type ApiClient, type CreateBatchInput, type CreateBatchResult } from '../ApiClient';
 import { getToken } from '../token';
 import type {
-  BatchDetail, BatchItem, BatchStatus, BatchSummary, CertificateItem, LoginResponse, PublicCertificate, Role, VerifyOutcome,
+  BatchDetail, BatchItem, BatchStatus, BatchSummary, CertificateDetail, CertificateItem, LoginResponse, Profile, ProfileSummary,
+  PublicCertificate, Role, VerifyOutcome,
 } from '../types';
 import { parseCsv, readText, REJECTED_SAMPLE, validateRows } from './csv';
 import {
   DEMO_PASSWORD, INSTITUTION, normalizeCourse, seedBatches, studentEmail, studentName, USERS, type MockBatch, type MockUser,
 } from './data';
+import { AVATAR_MAX_BYTES, AVATAR_TYPES, toSquareDataUrl } from './avatarImage';
+import { findByOwner, findBySlug, listProfiles, saveProfile, toPublic, validateProfile } from './profileStore';
+import { isValidSlug, toSummary } from '../profileUtils';
 import { readScenarios, type ScenarioSource } from './scenarios';
 
 export interface MockOptions {
@@ -19,6 +23,8 @@ export interface MockOptions {
   stepMs?: number;
 }
 
+const PAGE_SIZE = 12;
+const norm = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const TOKEN_PREFIX = 'mock:';
 const uuid = () =>
   globalThis.crypto?.randomUUID?.() ??
@@ -206,6 +212,98 @@ export function createMockClient(opts: MockOptions = {}): ApiClient {
       if (sc.has('verify-valid')) return 'VALID';
       if (!findCert(id, sc)) return 'NOT_FOUND';
       return /alterad|altered/i.test(file.name) ? 'ALTERED' : 'VALID';
+    },
+    // ───────── Perfiles ─────────
+    async getMyProfile(): Promise<Profile> {
+      const sc = await gate();
+      const user = auth('any', sc);
+      if (sc.has('profile-fail')) throw new ApiError(503, 'UNAVAILABLE', 'No se pudo cargar tu perfil.');
+      const mine = findByOwner(user.email);
+      if (!mine) throw new ApiError(404, 'NOT_FOUND', 'Todavía no tenés perfil.');
+      return mine.profile;
+    },
+
+    async updateMyProfile(patch): Promise<Profile> {
+      const sc = await gate();
+      const user = auth('any', sc);
+      if (sc.has('profile-fail')) throw new ApiError(503, 'UNAVAILABLE', 'No se pudo guardar tu perfil.');
+      const mine = findByOwner(user.email);
+      if (!mine) throw new ApiError(404, 'NOT_FOUND', 'Todavía no tenés perfil.');
+      // El rol y la cuenta no se editan desde el perfil.
+      const next: Profile = { ...mine.profile, ...patch, role: mine.profile.role };
+      if (typeof next.contactEmail === 'string') next.contactEmail = next.contactEmail.trim();
+      if (!next.contactEmail) delete next.contactEmail;
+      const changed = next.slug !== mine.profile.slug;
+      const taken = changed && (sc.has('slug-taken') || listProfiles().some((p) => p.key !== mine.key && p.profile.slug === next.slug));
+      const issues = validateProfile(next, false);
+      if (taken) {
+        if (isValidSlug(next.slug)) throw new ApiError(409, 'VALIDATION_ERROR', 'Ese enlace ya está en uso.', [{ field: 'slug', reason: 'SLUG_TAKEN' }]);
+      }
+      if (issues.length) throw new ApiError(400, 'VALIDATION_ERROR', 'El perfil tiene datos inválidos.', issues);
+      saveProfile(mine.key, next);
+      return next;
+    },
+
+    async uploadAvatar(file): Promise<{ avatarUrl: string }> {
+      const sc = await gate();
+      const user = auth('any', sc);
+      if (sc.has('avatar-fail')) throw new ApiError(503, 'UNAVAILABLE', 'No se pudo subir la foto.');
+      if (!AVATAR_TYPES.includes(file.type)) throw new ApiError(400, 'VALIDATION_ERROR', 'La foto debe ser JPG, PNG o WebP.', [{ field: 'file', reason: 'INVALID_TYPE' }]);
+      if (file.size > AVATAR_MAX_BYTES) throw new ApiError(400, 'VALIDATION_ERROR', 'La foto supera los 2 MB.', [{ field: 'file', reason: 'TOO_LARGE' }]);
+      const mine = findByOwner(user.email);
+      if (!mine) throw new ApiError(404, 'NOT_FOUND', 'Todavía no tenés perfil.');
+      const avatarUrl = await toSquareDataUrl(file, 512);
+      saveProfile(mine.key, { ...mine.profile, avatarUrl });
+      return { avatarUrl };
+    },
+
+    async getPublicProfile(slug): Promise<Profile> {
+      const sc = await gate({ anonymous: true });
+      if (sc.has('profile-fail')) throw new ApiError(503, 'UNAVAILABLE', 'No se pudo cargar el perfil.');
+      const found = findBySlug(slug);
+      if (!found) throw new ApiError(404, 'NOT_FOUND', 'No existe ese perfil.');
+      return toPublic(found.profile);
+    },
+
+    async searchProfiles(params = {}): Promise<ProfileSummary[]> {
+      const sc = await gate({ anonymous: true });
+      if (sc.has('profile-fail')) throw new ApiError(503, 'UNAVAILABLE', 'No se pudo cargar el directorio.');
+      if (sc.has('empty')) return [];
+      const q = norm(params.q?.trim() ?? '');
+      const skill = norm(params.skill?.trim() ?? '');
+      const hits = listProfiles().map((p) => p.profile).filter((p) => {
+        if (params.role && p.role !== params.role) return false;
+        if (skill && !p.skills.some((s) => norm(s.name).includes(skill))) return false;
+        if (!q) return true;
+        const hay = norm([p.displayName, p.headline, p.location, ...p.skills.map((s) => s.name), ...(p.specialties ?? [])].join(' '));
+        return q.split(/\s+/).every((w) => hay.includes(w));
+      });
+      const page = Math.max(1, params.page ?? 1);
+      return hits.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map(toSummary);
+    },
+
+    async checkSlugAvailable(slug): Promise<boolean> {
+      const sc = await gate();
+      const user = auth('any', sc);
+      const mine = findByOwner(user.email);
+      if (mine?.profile.slug === slug) return true;
+      if (sc.has('slug-taken') || !isValidSlug(slug)) return false;
+      return !findBySlug(slug);
+    },
+
+    async getCertificateDetail(id): Promise<CertificateDetail> {
+      const sc = await gate();
+      const user = auth('any', sc);
+      const found = findCert(id, sc);
+      if (!found || (user.role === 'student' && found.item.student_email !== user.email)) throw new ApiError(404, 'NOT_FOUND', 'No existe ese certificado.');
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const out: CertificateDetail = {
+        certificate_id: id, course_name: found.b.course, completion_date: found.b.date, issued_at: found.b.created, institution: INSTITUTION,
+        verifyUrl: `${origin}/verify/${id}`, student_name: found.item.student_name,
+        sha256: (id.replace(/[^0-9a-f]/gi, '0') + '0'.repeat(64)).slice(0, 64).toLowerCase(), // TODO(equipo): hash real del PDF registrado
+      };
+      if (sc.has('strict-contract')) { delete out.institution; delete out.sha256; delete out.student_name; }
+      return out;
     },
   };
 }

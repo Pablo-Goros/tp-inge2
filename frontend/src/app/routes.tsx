@@ -4,6 +4,13 @@ import { RouteErrorPage } from '../features/errors/UnexpectedErrorPage';
 import { BatchDetailPage } from '../features/operator/BatchDetailPage';
 import { BatchListPage } from '../features/operator/BatchListPage';
 import { NewBatchPage } from '../features/operator/NewBatchPage';
+import { HomePage } from '../features/home/HomePage';
+import { DirectoryPage } from '../features/profile/DirectoryPage';
+import { ProfileEditPage } from '../features/profile/ProfileEditPage';
+import { ProfilePage } from '../features/profile/ProfilePage';
+import { ProfileSettingsPage } from '../features/profile/ProfileSettingsPage';
+import { PublicProfilePage } from '../features/profile/PublicProfilePage';
+import { CertificateDetailPage } from '../features/student/CertificateDetailPage';
 import { MyCertificatesPage } from '../features/student/MyCertificatesPage';
 import { AuthProvider, homeFor, useAuth } from '../features/session/AuthProvider';
 import { LoginPage } from '../features/session/LoginPage';
@@ -36,6 +43,17 @@ export const buildRoutes = (client?: ApiClient): RouteObject[] => [
             children: [
               { path: '/verify', element: <VerifyPage /> }, // TODO(equipo): el contrato verifica por cert_id; /verify sin id solo lo usa el enlace del login
               { path: '/verify/:certId', element: <VerifyPage /> },
+              { path: '/p/:slug', element: <PublicProfilePage /> }, // pública
+              { path: '/directory', element: <DirectoryPage /> }, // pública
+              {
+                element: <RequireRole role="any"><Outlet /></RequireRole>,
+                children: [
+                  { path: '/home', element: <HomePage /> },
+                  { path: '/profile', element: <ProfilePage /> },
+                  { path: '/profile/edit', element: <ProfileEditPage /> },
+                  { path: '/profile/settings', element: <ProfileSettingsPage /> },
+                ],
+              },
               {
                 element: <RequireRole role="operator"><Outlet /></RequireRole>,
                 children: [
@@ -46,7 +64,10 @@ export const buildRoutes = (client?: ApiClient): RouteObject[] => [
               },
               {
                 element: <RequireRole role="student"><Outlet /></RequireRole>,
-                children: [{ path: '/student/certificates', element: <MyCertificatesPage /> }],
+                children: [
+                  { path: '/student/certificates', element: <MyCertificatesPage /> },
+                  { path: '/student/certificates/:id', element: <CertificateDetailPage /> },
+                ],
               },
               { path: '*', element: <NotFoundPage /> },
             ],

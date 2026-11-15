@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import {
-  Alert, Button, CertStatusBadge, Field, FileDropzone, SegmentedProgress, Table, Topbar, VerifyResultBadge, verifyMeta,
+  Alert, Avatar, Button, Chip, LevelMeter, ProgressRing, SectionCard, Timeline, TimelineItem, CertStatusBadge, Field, FileDropzone, SegmentedProgress, Table, Topbar, VerifyResultBadge, verifyMeta,
 } from './index';
 import type { VerifyOutcome } from '../../api/types';
 
@@ -150,5 +150,51 @@ describe('Topbar', () => {
     expect(screen.getByText('Operador')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
     expect(onLogout).toHaveBeenCalled();
+  });
+});
+
+describe('Avatar', () => {
+  it('muestra la imagen con alt y, si falla, cae a las iniciales', () => {
+    render(<Avatar name="Camila Ferreyra" src="/rota.png" alt="Foto de Camila" size="lg" />);
+    const img = screen.getByRole('img', { name: 'Foto de Camila' });
+    expect(img.tagName).toBe('IMG');
+    fireEvent.error(img);
+    const fb = screen.getByRole('img', { name: 'Foto de Camila' });
+    expect(fb.tagName).toBe('SPAN');
+    expect(fb).toHaveTextContent('CF');
+  });
+  it('sin src muestra iniciales y usa el nombre como alt', () => {
+    render(<Avatar name="Marcos Quiroga" ring />);
+    expect(screen.getByRole('img', { name: 'Marcos Quiroga' })).toHaveTextContent('MQ');
+  });
+});
+
+describe('LevelMeter', () => {
+  it.each([[4, 'Nivel 4 de 5'], [1, 'Nivel 1 de 5'], [9, 'Nivel 5 de 5']])('nivel %s → "%s"', (v, label) => {
+    render(<LevelMeter value={v} />);
+    expect(screen.getByRole('img', { name: label })).toBeInTheDocument();
+  });
+  it('marca los segmentos llenos aparte de los vacíos (no solo color)', () => {
+    const { container } = render(<LevelMeter value={3} />);
+    expect(container.querySelectorAll('.lvl-on')).toHaveLength(3);
+    expect(container.querySelectorAll('.lvl-seg')).toHaveLength(5);
+  });
+});
+
+describe('ProgressRing, Chip, SectionCard, Timeline', () => {
+  it('ProgressRing es un progressbar con valor', () => {
+    render(<ProgressRing percent={72} />);
+    expect(screen.getByRole('progressbar', { name: 'Completitud del perfil' })).toHaveAttribute('aria-valuenow', '72');
+  });
+  it('SectionCard titula con h2 y ofrece "Editar"', () => {
+    render(<MemoryRouter><SectionCard title="Experiencia" editTo="/profile/edit"><Chip tone="brand">Tutor</Chip></SectionCard></MemoryRouter>);
+    expect(screen.getByRole('heading', { level: 2, name: 'Experiencia' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Editar Experiencia' })).toHaveAttribute('href', '/profile/edit');
+    expect(screen.getByText('Tutor')).toBeInTheDocument();
+  });
+  it('Timeline es una lista y avisa el ítem actual', () => {
+    render(<Timeline label="Experiencia"><TimelineItem title="Ayudante" meta="mar 2026 – actual" current /></Timeline>);
+    expect(screen.getByRole('list', { name: 'Experiencia' })).toBeInTheDocument();
+    expect(screen.getByText('(actual)')).toBeInTheDocument();
   });
 });

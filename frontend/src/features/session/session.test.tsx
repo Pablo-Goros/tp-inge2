@@ -1,10 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { createMockClient } from '../../api/mock/MockApiClient';
 import { clearSession, loadSession, saveSession } from '../../api/token';
 import { buildRoutes } from '../../app/routes';
-import { useApi } from './AuthProvider';
+import { homeFor, useApi } from './AuthProvider';
 
 const client = (sc: string[] = []) => createMockClient({ latencyMs: 0, scenarios: () => new Set(sc) });
 
@@ -86,6 +86,58 @@ describe('guards', () => {
     saveSession(operator);
     const router = renderAt('/');
     await waitFor(() => expect(router.state.location.pathname).toBe('/operator/batches'));
+  });
+});
+
+describe('guards de perfiles', () => {
+  const heading = (name: string) => expect(screen.getByRole('heading', { name })).toBeInTheDocument();
+
+  it.each(['/home', '/profile', '/profile/edit', '/profile/settings'])('%s exige sesión (cualquier rol)', (path) => {
+    renderAt(path);
+    heading('No tenés permiso');
+    cleanup();
+    for (const u of [student, operator]) {
+      saveSession(u);
+      renderAt(path);
+      expect(screen.queryByRole('heading', { name: 'No tenés permiso' })).not.toBeInTheDocument();
+      cleanup();
+      clearSession();
+    }
+  });
+
+  it('/p/:slug y /directory son públicas (sin sesión muestran "Ingresar")', () => {
+    renderAt('/p/camila-ferreyra');
+    heading('Perfil público');
+    expect(screen.getByRole('link', { name: 'Ingresar' })).toBeInTheDocument();
+    cleanup();
+    renderAt('/directory');
+    heading('Directorio');
+  });
+
+  it('con sesión, las rutas públicas muestran la topbar de sesión con la nav del rol', () => {
+    saveSession(student);
+    renderAt('/directory');
+    const nav = screen.getByRole('navigation', { name: 'Principal' });
+    expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual(['Inicio', 'Mis certificados', 'Mi perfil', 'Directorio']);
+    cleanup();
+    saveSession(operator);
+    renderAt('/p/marcos-quiroga');
+    expect(within(screen.getByRole('navigation', { name: 'Principal' })).getAllByRole('link').map((a) => a.textContent)).toEqual(['Inicio', 'Lotes', 'Nuevo lote', 'Mi perfil', 'Directorio']);
+  });
+
+  it('/student/certificates/:id es solo de alumnos', () => {
+    saveSession(operator);
+    renderAt('/student/certificates/abc');
+    heading('No tenés permiso');
+    cleanup();
+    saveSession(student);
+    renderAt('/student/certificates/abc');
+    heading('Detalle del certificado');
+  });
+
+  it('los destinos post-login no cambian', () => {
+    expect(homeFor('operator')).toBe('/operator/batches');
+    expect(homeFor('student')).toBe('/student/certificates');
   });
 });
 

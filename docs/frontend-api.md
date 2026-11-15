@@ -58,3 +58,25 @@ Sin escenario, la validación del CSV es real: los 4 motivos (`INVALID_EMAIL`, `
 ## Guards y pantallas globales
 
 Sin sesión o con rol incorrecto en una ruta protegida: 403 en el lugar (sin redirigir). Ruta inexistente: 404. `/` redirige a la home del rol (o a `/login`). `/verify/:certId` es público. Errores inesperados: `errorElement` del router y `ErrorBoundary` global (pantalla genérica; el detalle solo va a `console.error`). El escenario `csv-reject` del mock devuelve siempre las mismas 4 filas, por eso el conteo ("4 de N filas") no depende del archivo subido.
+
+## Perfiles (alumnos y tutores)
+
+> TODO(equipo): el backend **aún no tiene** estos endpoints. El frontend los consume desde el mock (por defecto) o desde `/api` con `VITE_API=http`. "Tutor" en la UI = rol `operator` del sistema (no hay rol nuevo). El perfil es **siempre público**; no hay toggle público/privado.
+
+| Endpoint | Auth | Notas |
+|---|---|---|
+| `GET /api/me/profile` | sí | Perfil completo propio. |
+| `PUT /api/me/profile` | sí | Parche parcial o perfil completo. 400 `VALIDATION_ERROR` con `details: [{field, reason}]`; slug repetido: 409 `VALIDATION_ERROR` con `reason: SLUG_TAKEN`. El rol no se edita. |
+| `POST /api/me/profile/avatar` | sí | multipart, campo `file`. jpg/png/webp, máx. 2 MB. Responde `{avatarUrl}` y lo guarda como foto del perfil. |
+| `GET /api/profiles/{slug}` | **no** | Perfil público; 404 si no existe. Ya viene sin las secciones ocultas. |
+| `GET /api/profiles?q=&role=&skill=&page=` | **no** | `ProfileSummary[]` (12 por página). `role`: `student` \| `operator`. |
+| `GET /api/profiles/slug-available?slug=` | sí | `{available: boolean}`; el slug propio cuenta como disponible. |
+| `GET /api/certificates/{id}` | sí | `CertificateDetail` (alumno: solo los propios). `sha256` es opcional: TODO(equipo). |
+
+**Forma de `Profile`** (ver `src/api/types.ts`): identidad (`slug` kebab único, `displayName`, `headline`, `pronouns?`, `location`, `avatarUrl` siempre presente, `coverStyle` entre 8 portadas generadas, `role`, `about`, `openTo?`, `availability?`, `contactEmail?`, `links[]`); secciones CV (`experience`, `education`, `skills` con `level` 1-5, `languages`, `projects`, `achievements`, `publications`, `volunteering`, `interests`, `certificatesFeatured` = ids de `/me/certificates`); extras de alumno (`studyGoals?`, `lookingFor?`) y de tutor (`specialties`, `subjectsTaught`, `teachingYears`, `modality`, `officeHours`, `teachingApproach`); `institution`; `hiddenSections: SectionKey[]`. La completitud **no se guarda**: `profileCompleteness(profile)` en `src/api/profileUtils.ts`.
+
+**Privacidad.** El email de cuenta nunca forma parte del perfil ni de ninguna respuesta pública. `contactEmail` es un campo opcional que la persona escribe a propósito; si está vacío, el backend debe omitirlo (no enviar `""`). Las secciones en `hiddenSections` se vacían en la respuesta pública y siguen visibles para su dueño. `/verify` sigue sin mostrar email ni datos de cuenta.
+
+**Mock.** ~32 perfiles ficticios (14 muy completos: alumno01..07, Marcos Quiroga = operador y 6 tutores sin cuenta; alumno08..25 con perfil base). Avatares SVG generados. Las ediciones persisten en `localStorage['mock:profiles']`; `mockApi.resetProfiles()` en la consola las borra. Escenarios nuevos: `profile-fail` (503 al leer/guardar perfiles y directorio), `slug-taken` (todo slug figura ocupado), `avatar-fail` (503 al subir foto). `empty` deja el directorio vacío. `strict-contract` omite `institution`, `sha256` y `student_name` en el detalle de certificado.
+
+**Rutas.** Públicas: `/p/:slug`, `/directory`. Con sesión (cualquier rol): `/home`, `/profile`, `/profile/edit`, `/profile/settings`. Alumno: `/student/certificates/:id`. Destinos post-login sin cambios.
