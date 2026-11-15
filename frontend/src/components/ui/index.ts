@@ -24,3 +24,5 @@ export * from './RepeatableList';
 export * from './Select';
 export * from './Switch';
 export * from './Textarea';
+export * from './CopyButton';
+export * from './QrCode';

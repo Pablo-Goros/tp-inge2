@@ -13,5 +13,6 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    testTimeout: 15000, // la suite corre en paralelo y los tests del editor son pesados
   },
 });

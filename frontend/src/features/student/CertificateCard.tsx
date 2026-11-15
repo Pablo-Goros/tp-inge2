@@ -1,33 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { CertificateItem } from '../../api';
 import { Alert, Button, Card } from '../../components/ui';
-import { useApi } from '../session/AuthProvider';
 import { formatDate } from '../verify/RegisteredDataCard';
-import { pdfFileName, saveBlob } from './downloadPdf';
-
-type Dl = 'idle' | 'busy' | 'error';
+import { usePdfDownload } from './usePdfDownload';
 
 export function CertificateCard({ cert }: { cert: CertificateItem }) {
-  const api = useApi();
-  const [dl, setDl] = useState<Dl>('idle');
-  const busy = useRef(false);
-  const alive = useRef(true);
-  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
-
-  async function download() {
-    if (busy.current) return; // una sola petición aunque se haga doble clic
-    busy.current = true;
-    setDl('busy');
-    try {
-      const blob = await api.downloadCertificatePdf(cert.certificate_id);
-      saveBlob(blob, pdfFileName(cert.course_name));
-      if (alive.current) setDl('idle');
-    } catch {
-      if (alive.current) setDl('error');
-    } finally {
-      busy.current = false;
-    }
-  }
+  const { state: dl, download } = usePdfDownload(cert.certificate_id, cert.course_name);
 
   const rows: [string, string][] = [];
   if (cert.institution) rows.push(['Institución', cert.institution]);
@@ -51,6 +29,7 @@ export function CertificateCard({ cert }: { cert: CertificateItem }) {
       >
         {dl === 'error' ? '↻ Descargar PDF' : '↓ Descargar PDF'}
       </Button>
+      <Link className="lnk-draw cert-detail" to={`/student/certificates/${cert.certificate_id}`} aria-label={`Ver detalle de ${cert.course_name}`}>Ver detalle</Link>
     </Card>
   );
 }

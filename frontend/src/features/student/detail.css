@@ -1,0 +1,37 @@
+/* Detalle de certificado: credencial (etapa D). Solo tokens. */
+.cd { max-width: 960px; gap: 20px; }
+.cd-back { align-self: flex-start; font-size: 13px; }
+.cd-cred { overflow: hidden; }
+.cd-band { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 28px; background: linear-gradient(115deg, var(--text) 0%, var(--brand) 100%); color: var(--on-brand); }
+.cd-band-l { color: var(--on-brand); }
+.cd-body { display: flex; gap: 32px; align-items: flex-start; justify-content: space-between; padding: 28px; }
+.cd-main { display: flex; flex-direction: column; gap: 20px; min-width: 0; flex: 1; }
+.cd-course { font-size: 28px; overflow-wrap: anywhere; }
+.cd-dl { margin: 0; display: flex; flex-direction: column; }
+.cd-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); align-items: center; }
+.cd-row:first-child { border-top: 0; }
+.cd-row dt { color: var(--text-muted); font-size: 13px; }
+.cd-row dd { margin: 0; font-weight: 500; min-width: 0; }
+.cd-id { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cd-hash { font-size: 12px; font-weight: 400; }
+.cd-qr { flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface); }
+.qr { display: block; max-width: 100%; height: auto; }
+.qr-bg { fill: var(--surface); }
+.qr-fg { fill: var(--text); }
+
+.cd-actions { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-start; }
+.cd-dl-wrap { display: flex; flex-direction: column; gap: 8px; }
+.cd-feature { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cd-msg { font-size: 12px; color: var(--ok); min-height: 1em; }
+.cd-msg[data-tone='error'] { color: var(--bad); }
+
+@media (max-width: 720px) {
+  .cd-band { padding: 12px 16px; }
+  .cd-body { flex-direction: column-reverse; align-items: stretch; padding: 20px 16px; gap: 20px; }
+  .cd-qr { align-self: center; }
+  .cd-course { font-size: 22px; }
+  .cd-row { grid-template-columns: 1fr; gap: 2px; }
+  .cd-actions { flex-direction: column; align-items: stretch; }
+  .cd-actions .btn { width: 100%; }
+  .copy-wrap { width: 100%; }
+}

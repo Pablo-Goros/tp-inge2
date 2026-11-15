@@ -19,8 +19,9 @@ export function Avatar({ src, alt, name, size = 'md', ring, className }: Props) 
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [src]);
   const cls = ['av', `av-${size}`, ring && 'av-ring', className].filter(Boolean).join(' ');
+  const decorative = alt === '';
   if (!src || failed) {
-    return <span role="img" aria-label={alt ?? name} className={`${cls} av-fb`}><span aria-hidden="true">{initialsOf(name)}</span></span>;
+    return <span {...(decorative ? { 'aria-hidden': true } : { role: 'img', 'aria-label': alt ?? name })} className={`${cls} av-fb`}><span aria-hidden="true">{initialsOf(name)}</span></span>;
   }
   return <img className={cls} src={src} alt={alt ?? name} onError={() => setFailed(true)} />;
 }

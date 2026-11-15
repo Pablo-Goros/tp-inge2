@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import type { CertificateItem } from '../../api';
 import { EmptyState, ErrorState, SkeletonList } from '../../components/ui';
 import { useApi } from '../session/AuthProvider';
@@ -34,6 +35,7 @@ export function MyCertificatesPage() {
       <div className="vf-head">
         <h1 className="disp page-title">Mis certificados</h1>
         <p className="help">Certificados emitidos a tu cuenta. Cada PDF incluye un QR para verificarlo.</p>
+        <p className="help">Elegí cuáles <Link className="lnk-draw" to="/profile/edit#certificates">destacar en tu perfil</Link>.</p>
       </div>
       {load.s === 'loading' && <SkeletonList label="Cargando certificadosâ€¦" rows={2} height={110} />}
       {load.s === 'error' && (
