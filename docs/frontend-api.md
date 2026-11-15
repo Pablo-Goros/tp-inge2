@@ -26,7 +26,7 @@ Todos los errores usan el envelope `{ error: { code, message, details } }` y se 
 | `GET /batches/{id}` | `created_at` | «creado dd/mm/aaaa» en el detalle (ya viene en el listado) |
 | `GET /batches` y `/batches/{id}` | código corto de lote | Se muestra `#7F3A…` (4 primeros hex del uuid, sin número correlativo); no hace falta campo nuevo salvo que prefieran otro formato |
 | `POST /batches` (CSV) | columnas `nombre`+`email` o solo `email` | El contrato dice una sola columna `email`; el diseño muestra ambas. El mock acepta las dos. Formato exacto, ejemplo y ayuda: `frontend/src/config/pending.ts` (`TODO(equipo)`) |
-| `/verify` sin `cert_id` | — | El contrato verifica por `cert_id`; el enlace «Verificar un certificado» del login lleva a `/verify`. `TODO(equipo)`: definir qué se muestra sin id |
+| `/verify` sin `cert_id` | — | El contrato verifica por `cert_id`; el enlace «Verificar un certificado» del login lleva a `/verify`. `TODO(equipo)`: definir qué se muestra sin id. Provisorio (etapa 3): campo «Identificador del certificado» que navega a `/verify/:id` |
 
 ## Cuentas y escenarios del mock
 

@@ -73,7 +73,7 @@ describe('guards', () => {
 
   it('/verify/:certId es pública y / redirige según sesión', async () => {
     renderAt('/verify/abc');
-    expect(screen.getByRole('heading', { name: 'Verificar un certificado' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Verificación de certificado' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ingresar' })).toBeInTheDocument();
   });
 
