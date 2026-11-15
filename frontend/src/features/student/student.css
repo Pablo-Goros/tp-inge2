@@ -1,0 +1,14 @@
+/* Mis certificados (etapa 4). Fuente: design/MisCertificados.dc.html */
+.vf-head { display: flex; flex-direction: column; gap: 6px; }
+.cert-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.card.cert { display: flex; flex-direction: column; gap: 10px; padding: 20px; }
+.cert-title { font-size: 17px; font-weight: 700; margin: 0; }
+.cert .k { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--mu); }
+.cert .k b { color: #fff; font-weight: 500; text-align: right; }
+.cert-btn { margin-top: 6px; }
+@media (max-width: 960px) { .cert-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) {
+  .cert-grid { grid-template-columns: 1fr; gap: 16px; }
+  .card.cert { padding: 16px; }
+  .cert-title { font-size: 16px; }
+}
