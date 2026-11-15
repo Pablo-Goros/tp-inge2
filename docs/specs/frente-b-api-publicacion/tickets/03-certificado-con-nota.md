@@ -1,7 +1,7 @@
 # 03: Emitir y descargar el certificado con nota mediante C
 
 **Spec:** [Frente B: API, base de datos y publicación](../spec.md)
-**Status:** ready-for-agent
+**Status:** blocked — dependencia externa C no disponible; ver [entrega](../entrega.md)
 
 ## What to build
 
@@ -23,3 +23,4 @@ El certificado sigue siendo de finalización: una nota baja no dispara rechazo p
 
 - [02: Aceptar y consultar la nota final opcional](02-nota-final-opcional.md)
 - Dependencia externa: worker, generación de PDF y registro simulado de C disponibles y adaptación de nota acordada con su responsable. Hasta entonces no declarar completado este ticket.
+

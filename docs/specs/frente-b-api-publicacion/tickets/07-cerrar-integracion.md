@@ -1,7 +1,7 @@
 # 07: Cerrar integración, permisos y contratos del frente B
 
 **Spec:** [Frente B: API, base de datos y publicación](../spec.md)
-**Status:** ready-for-agent
+**Status:** blocked — dependencia externa C no disponible; ver [entrega](../entrega.md)
 
 ## What to build
 
@@ -31,3 +31,4 @@ La adaptación visual de A y los servicios/scripts/documentos generales de D se 
 - [05: Comparar el archivo recibido con el registro](05-verificar-archivo.md)
 - [06: Demostrar publicación tras una caída del broker](06-recuperar-publicacion.md)
 - Dependencia externa: casos de uso de verificación y registro simulado de C disponibles para integración real.
+
