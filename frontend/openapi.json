@@ -776,12 +776,14 @@
             "type": "string",
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "format": "date",
-            "title": "Completion Date"
+            "title": "Completion Date",
+            "description": "Fecha YYYY-MM-DD no futura (dia de Buenos Aires)"
           },
           "file": {
             "type": "string",
             "contentMediaType": "application/octet-stream",
-            "title": "File"
+            "title": "File",
+            "description": "CSV UTF-8/BOM, una columna email, 1-100 filas, hasta 1.048.576 bytes; sin filas vacias intermedias"
           }
         },
         "type": "object",
