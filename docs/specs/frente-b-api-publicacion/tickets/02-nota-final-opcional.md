@@ -1,7 +1,7 @@
 # 02: Aceptar y consultar la nota final opcional
 
 **Spec:** [Frente B: API, base de datos y publicación](../spec.md)
-**Status:** ready-for-agent
+**Status:** in-progress
 
 ## What to build
 
@@ -24,3 +24,4 @@ Agregar una migración nueva y compatible que permita nota nula. Actualizar el [
 ## Blocked by
 
 - [01: Aceptar CSV estricto y fechas válidas](01-validar-lotes-csv.md)
+
