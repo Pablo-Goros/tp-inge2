@@ -1,6 +1,6 @@
-# 2026-11-15T01:44:59Z · commit 7622073 · http://localhost:8080
+# 2026-11-15T02:17:31Z · commit 54f4db2 · http://localhost:8080
 == Escenario 10-segundo-up
-   antes: users=26 institutions=1 batches=2 cert_requests=40 certificates=0 registry=0
+   antes: users=26 institutions=1 batches=4 cert_requests=80 certificates=0 registry=0
    ok    seed (1 operador + 25 alumnos, 1 institución) = users=26 institutions=1
 -- docker compose up -d (vez 1)
  Container certs-api-1 Running 
@@ -11,39 +11,39 @@
  Container certs-rabbitmq-1 Running 
  Container certs-postgres-1 Waiting 
  Container certs-rabbitmq-1 Waiting 
- Container certs-postgres-1 Healthy 
  Container certs-rabbitmq-1 Healthy 
+ Container certs-postgres-1 Healthy 
  Container certs-init-1 Starting 
  Container certs-init-1 Started 
  Container certs-init-1 Waiting 
  Container certs-init-1 Exited 
  Container certs-api-1 Waiting 
  Container certs-api-1 Healthy 
- Container certs-publisher-1 Waiting 
  Container certs-worker-1 Waiting 
  Container certs-web-1 Waiting 
  Container certs-postgres-1 Waiting 
  Container certs-rabbitmq-1 Waiting 
  Container certs-init-1 Waiting 
  Container certs-api-1 Waiting 
+ Container certs-publisher-1 Waiting 
  Container certs-init-1 Exited 
  Container certs-api-1 Healthy 
- Container certs-publisher-1 Healthy 
  Container certs-postgres-1 Healthy 
+ Container certs-publisher-1 Healthy 
  Container certs-worker-1 Healthy 
  Container certs-web-1 Healthy 
  Container certs-rabbitmq-1 Healthy 
    ok    init volvió a ejecutarse
    ok    código de salida de init = 0
 -- docker compose up -d (vez 2)
+ Container certs-rabbitmq-1 Running 
  Container certs-api-1 Running 
  Container certs-publisher-1 Running 
  Container certs-worker-1 Running 
  Container certs-web-1 Running 
  Container certs-postgres-1 Running 
- Container certs-rabbitmq-1 Running 
- Container certs-rabbitmq-1 Waiting 
  Container certs-postgres-1 Waiting 
+ Container certs-rabbitmq-1 Waiting 
  Container certs-rabbitmq-1 Healthy 
  Container certs-postgres-1 Healthy 
  Container certs-init-1 Starting 
@@ -52,22 +52,22 @@
  Container certs-init-1 Exited 
  Container certs-api-1 Waiting 
  Container certs-api-1 Healthy 
- Container certs-postgres-1 Waiting 
  Container certs-rabbitmq-1 Waiting 
  Container certs-init-1 Waiting 
  Container certs-api-1 Waiting 
  Container certs-publisher-1 Waiting 
  Container certs-worker-1 Waiting 
  Container certs-web-1 Waiting 
+ Container certs-postgres-1 Waiting 
  Container certs-init-1 Exited 
  Container certs-worker-1 Healthy 
- Container certs-api-1 Healthy 
- Container certs-web-1 Healthy 
  Container certs-publisher-1 Healthy 
- Container certs-rabbitmq-1 Healthy 
+ Container certs-web-1 Healthy 
  Container certs-postgres-1 Healthy 
+ Container certs-rabbitmq-1 Healthy 
+ Container certs-api-1 Healthy 
    ok    init volvió a ejecutarse
    ok    código de salida de init = 0
-   ok    conteos tras dos up = users=26 institutions=1 batches=2 cert_requests=40 certificates=0 registry=0
+   ok    conteos tras dos up = users=26 institutions=1 batches=4 cert_requests=80 certificates=0 registry=0
    ok    colas de RabbitMQ = cert.issue cert.issue.dlq cert.issue.wait 
 == PASS 10-segundo-up

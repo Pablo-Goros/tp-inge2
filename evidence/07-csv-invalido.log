@@ -1,4 +1,4 @@
-# 2026-11-15T01:44:57Z · commit 7622073 · http://localhost:8080
+# 2026-11-15T02:17:30Z · commit 54f4db2 · http://localhost:8080
 == Escenario 07-csv-invalido
 -- Subir sample-data/con-error.csv (email sin cuenta + email repetido + una fila válida)
 {
@@ -24,7 +24,7 @@
    ok    motivo de nadie@demo.test = NO_ACCOUNT
    ok    motivo de alumno22@demo.test = DUPLICATE_IN_FILE
 -- Nada se creó (todo o nada)
-   ok    lotes = 1
-   ok    solicitudes = 20
-   ok    filas de outbox = 20
+   ok    lotes = 4
+   ok    solicitudes = 80
+   ok    filas de outbox = 80
 == PASS 07-csv-invalido

@@ -1,11 +1,11 @@
-# 2026-11-15T01:44:58Z · commit 7622073 · http://localhost:8080
+# 2026-11-15T02:17:29Z · commit 54f4db2 · http://localhost:8080
 == Escenario 04-mensaje-repetido
 -- A1. Primer POST de lote-20.csv
    ok    HTTP del primer POST = 201
 -- A2. Mismo POST, misma clave (simula un reintento por corte de conexión)
    ok    HTTP del POST repetido = 200
-   ok    batch_id devuelto = 8e1ddacf-fb4c-4e11-b308-e9ec0a9f1017
-   ok    lotes en la base = 2
+   ok    batch_id devuelto = c7745030-9ad2-40c4-9ad3-ae49bd3e944f
+   ok    lotes en la base = 4
    ok    solicitudes del lote = 20
    ok    filas de outbox del lote = 20
 -- A3. Misma clave con otro contenido -> conflicto

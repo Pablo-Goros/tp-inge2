@@ -45,6 +45,10 @@ scenario_begin() {
 }
 
 _scenario_end() {
+  local s
+  for s in "${_RESTORE[@]+"${_RESTORE[@]}"}"; do   # vuelve a prender lo que el escenario apagó
+    docker compose start "$s" >/dev/null 2>&1 || true
+  done
   if [[ "$_PENDING" == 1 ]]; then echo "== PENDIENTE $SCENARIO"
   elif [[ "$1" == 0 ]]; then echo "== PASS $SCENARIO"
   else echo "== FAIL $SCENARIO (código $1)"
@@ -82,6 +86,32 @@ sql() {
 }
 
 container_id() { docker compose ps -aq "$1"; }
+
+# ---------- detener y recuperar servicios ----------
+
+_RESTORE=()
+
+# stop_service <servicio>: lo detiene, comprueba que de verdad quedó detenido y lo
+# anota para volver a prenderlo al salir aunque el escenario falle a mitad.
+stop_service() {
+  _RESTORE+=("$1")
+  docker compose stop "$1" >/dev/null 2>&1
+  assert_eq false "$(docker inspect -f '{{.State.Running}}' "$(container_id "$1")")" "$1 corriendo"
+}
+
+# start_service <servicio> [timeout_s]: lo prende y espera a que esté sano (o corriendo, si
+# no tiene healthcheck).
+start_service() {
+  local deadline=$((SECONDS + ${2:-90})) st
+  docker compose start "$1" >/dev/null 2>&1
+  while :; do
+    st=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$(container_id "$1")")
+    [[ "$st" == healthy || "$st" == running ]] && break
+    [[ $SECONDS -ge $deadline ]] && fail "$1 no quedó sano tras ${2:-90} s (estado: $st)"
+    sleep 1
+  done
+  echo "   ok    $1 de nuevo arriba ($st)"
+}
 
 # ---------- HTTP ----------
 
