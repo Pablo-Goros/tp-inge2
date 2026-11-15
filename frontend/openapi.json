@@ -681,6 +681,17 @@
             "type": "integer",
             "title": "Attempts"
           },
+          "final_grade": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Grade"
+          },
           "last_error": {
             "anyOf": [
               {
@@ -773,7 +784,7 @@
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "File",
-            "description": "CSV UTF-8/BOM, una columna email, 1-100 filas, hasta 1.048.576 bytes; sin filas vacias intermedias"
+            "description": "CSV UTF-8/BOM, email y final_grade opcional (0-10, hasta dos decimales), 1-100 filas, hasta 1.048.576 bytes; sin filas vacias intermedias"
           }
         },
         "type": "object",

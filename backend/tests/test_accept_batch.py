@@ -367,3 +367,50 @@ def test_structural_and_semantic_errors_accumulated(client, session, users, stud
     assert [(i['row'], i['reason']) for i in r.json()['error']['details']] == [
         (1, 'EMPTY_ROW'), (2, 'INVALID_EMAIL'), (3, 'INVALID_FIELD_COUNT'), (4, 'NO_ACCOUNT')]
     assert _counts(session) == before
+
+
+def test_grade_is_optional_numeric_in_authorized_detail(client, session, users, students):
+    token = _token(client)
+    r = _post(client, token, b'email,final_grade\ns0@itba.test,0\ns1@itba.test,9.75\ns2@itba.test,')
+    assert r.status_code == 201, r.text
+    detail = client.get('/api/batches/' + r.json()['batch_id'], headers={'Authorization': f'Bearer {token}'})
+    assert {i['student_email']: i['final_grade'] for i in detail.json()['items']} == {
+        's0@itba.test': 0, 's1@itba.test': 9.75, 's2@itba.test': None}
+
+@pytest.mark.parametrize('grade', ['-0.01', '10.01', '1.234', 'NaN', 'Infinity', '1e1', 'texto', '"9,5"'])
+def test_invalid_grade_rejects_whole_batch(client, session, users, students, grade):
+    before = _counts(session)
+    data = ('email,final_grade\ns0@itba.test,8\ns1@itba.test,' + grade + '\nmissing@itba.test,7').encode()
+    r = _post(client, _token(client), data)
+    assert r.status_code == 400
+    assert [(i['row'], i['reason']) for i in r.json()['error']['details']] == [(2, 'INVALID_GRADE'), (3, 'NO_ACCOUNT')]
+    assert _counts(session) == before
+
+
+def test_grade_replay_conflict_and_business_identity(client, session, users, students):
+    token = _token(client)
+    data = b'email,final_grade\ns0@itba.test,10.00'
+    first = _post(client, token, data)
+    again = _post(client, token, data)
+    assert again.status_code == 200 and again.json()['batch_id'] == first.json()['batch_id']
+    assert _post(client, token, data.replace(b'10.00', b'9.50')).status_code == 409
+    other = _post(client, token, data.replace(b'10.00', b'9.50'), key='other')
+    assert other.status_code == 400 and other.json()['error']['details'][0]['reason'] == 'ALREADY_REQUESTED'
+    assert _counts(session)[:3] == (1, 1, 1)
+
+
+def test_legacy_csv_detail_has_null_grade(client, session, users, students):
+    token = _token(client)
+    first = _post(client, token, _csv(1))
+    headers = {'Authorization': f'Bearer {token}'}
+    detail = client.get('/api/batches/' + first.json()['batch_id'], headers=headers).json()
+    assert detail['items'][0]['final_grade'] is None
+    assert 'final_grade' not in client.get('/api/batches', headers=headers).json()[0]
+
+
+def test_concurrent_same_key_changed_grade_conflicts(engine, committed):
+    results = _race(engine, committed, ['same', 'same'], [
+        b'email,final_grade\ncs@c.test,9.25', b'email,final_grade\ncs@c.test,8.50'])
+    failures = [r for r in results if isinstance(r, ApiError)]
+    assert len(failures) == 1 and failures[0].status == 409
+    assert _final_counts(engine) == (1, 1, 1)

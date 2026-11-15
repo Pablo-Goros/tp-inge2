@@ -121,3 +121,9 @@ def test_all_structural_errors_preserve_original_positions():
         parse_csv(b'email\n\na@x.com,extra\n\nb@x.com')
     assert [(issue.row, issue.reason) for issue in exc.value.issues] == [
         (1, 'EMPTY_ROW'), (2, 'INVALID_FIELD_COUNT'), (3, 'EMPTY_ROW')]
+
+
+def test_csv_optional_grade_retains_student_association():
+    from app.domain.csv_validation import parse_csv_rows
+    rows = parse_csv_rows(b' FINAL_GRADE , EMAIL \n9.75, A@X.com\n,b@x.com')
+    assert [(r.email, r.final_grade) for r in rows] == [('A@X.com', '9.75'), ('b@x.com', '')]

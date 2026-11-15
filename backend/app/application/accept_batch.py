@@ -2,6 +2,8 @@
 import datetime as dt
 import hashlib
 import logging
+import re
+from decimal import Decimal
 import uuid
 from dataclasses import dataclass
 
@@ -11,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.api.errors import ApiError
 from app.application.batch_status import counts_for_batches, derive_batch_status
-from app.domain.csv_validation import CsvFormatError, RowIssue, parse_csv, validate_rows
+from app.domain.csv_validation import CsvFormatError, RowIssue, parse_csv_rows, validate_rows
 from app.domain.normalize import course_key as make_course_key
 from app.domain.normalize import normalize_email
 from app.infrastructure.models import Batch, CertRequest, Outbox, RequestStatus, User
@@ -89,16 +91,28 @@ def accept_batch(
 
     structural_issues = []
     try:
-        emails = parse_csv(csv_bytes)
+        rows = parse_csv_rows(csv_bytes)
     except CsvFormatError as e:
-        if e.emails is None:
+        if e.rows is None:
             raise ApiError(400, "VALIDATION_ERROR", "CSV inválido", [{"row": e.row, "reason": e.reason}]) from None
-        emails, structural_issues = e.emails, e.issues
+        rows, structural_issues = e.rows, e.issues
 
+    emails = [row.email for row in rows]
+    grades = []
+    grade_issues = []
+    for number, row in enumerate(rows, start=1):
+        raw = row.final_grade
+        if not raw:
+            grades.append(None)
+        elif re.fullmatch(r"[0-9]+(?:\.[0-9]{1,2})?", raw) and Decimal(raw) <= 10:
+            grades.append(Decimal(raw))
+        else:
+            grades.append(None)
+            grade_issues.append(RowIssue(number, normalize_email(row.email), "INVALID_GRADE"))
     institution_id = session.scalar(select(User.institution_id).where(User.id == operator_id))
     issues, known = _issues(session, institution_id, emails, ckey, completion_date,
                              {i.row for i in structural_issues})
-    issues = sorted(structural_issues + issues, key=lambda i: i.row)
+    issues = sorted(structural_issues + grade_issues + issues, key=lambda i: i.row)
     if issues:
         raise _validation_error(issues)
 
@@ -106,8 +120,8 @@ def accept_batch(
                   completion_date=completion_date, idempotency_key=idempotency_key, request_fingerprint=fp)
     reqs = [
         CertRequest(id=uuid.uuid4(), batch_id=batch.id, student_id=known[normalize_email(e)], course_key=ckey,
-                    completion_date=completion_date, status=RequestStatus.PENDING)
-        for e in emails
+                    completion_date=completion_date, status=RequestStatus.PENDING, final_grade=grade)
+        for e, grade in zip(emails, grades)
     ]
     # Orden determinista de bloqueo en el índice único: evita deadlocks entre lotes solapados.
     reqs.sort(key=lambda r: r.student_id)
