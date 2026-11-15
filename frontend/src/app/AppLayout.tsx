@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { LinkButton, Topbar, type NavItem } from '../components/ui';
 import { homeFor, useAuth } from '../features/session/AuthProvider';
 
@@ -11,6 +11,7 @@ const ROLE_LABEL = { operator: 'Operador', student: 'Alumno' };
 export function AppLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const onVerify = useLocation().pathname.startsWith('/verify');
   return (
     <>
       <Topbar
@@ -18,7 +19,7 @@ export function AppLayout() {
         user={user ? { name: user.name, roleLabel: ROLE_LABEL[user.role] } : undefined}
         homeTo={user ? homeFor(user.role) : '/'}
         onLogout={() => { logout(); navigate('/login', { replace: true }); }}
-        right={user ? undefined : <LinkButton to="/login" variant="ghost">Ingresar</LinkButton>}
+        right={user || !onVerify ? undefined : <LinkButton to="/login" variant="ghost">Ingresar</LinkButton>}
       />
       <Outlet />
     </>

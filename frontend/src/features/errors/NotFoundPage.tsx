@@ -1,13 +1,10 @@
 import { LinkButton } from '../../components/ui';
+import { StatusScreen } from './StatusScreen';
 
-// TODO etapa 6: versión definitiva (hoy: copy de Globales.dc.html).
 export function NotFoundPage() {
   return (
-    <div className="ctr">
-      <div className="disp grad ctr-code" aria-hidden="true">404</div>
-      <h1 className="ctr-title">Página no encontrada</h1>
-      <p>La dirección que buscás no existe o fue movida.</p>
+    <StatusScreen code="404" title="Página no encontrada" message="La dirección que buscás no existe o fue movida.">
       <LinkButton to="/">Volver al inicio</LinkButton>
-    </div>
+    </StatusScreen>
   );
 }

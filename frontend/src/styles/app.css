@@ -4,6 +4,8 @@
 .ctr-code { font-size: 56px; }
 .ctr-warn { color: var(--amb); }
 .ctr-title { font-size: 20px; font-weight: 700; }
+.ctr-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.ctr-title:focus { outline: none; }
 
 .login { display: flex; min-height: 100vh; }
 .login-hero {
@@ -33,5 +35,6 @@
   .ctr { padding: 64px 24px; }
   .ctr-code { font-size: 48px; }
   .ctr-title { font-size: 18px; }
-  .ctr .btn { align-self: stretch; }
+  .ctr-actions { align-self: stretch; flex-direction: column; }
+  .ctr-actions .btn { width: 100%; }
 }

@@ -1,6 +1,6 @@
 import { Navigate, Outlet, type RouteObject } from 'react-router-dom';
 import { NotFoundPage } from '../features/errors/NotFoundPage';
-import { UnexpectedErrorPage } from '../features/errors/UnexpectedErrorPage';
+import { RouteErrorPage } from '../features/errors/UnexpectedErrorPage';
 import { BatchDetailPage } from '../features/operator/BatchDetailPage';
 import { BatchListPage } from '../features/operator/BatchListPage';
 import { NewBatchPage } from '../features/operator/NewBatchPage';
@@ -27,7 +27,7 @@ export const buildRoutes = (client?: ApiClient): RouteObject[] => [
     element: <AuthShell client={client} />,
     children: [
       {
-        errorElement: <UnexpectedErrorPage />,
+        errorElement: <RouteErrorPage />,
         children: [
           { path: '/', element: <RootRedirect /> },
           { path: '/login', element: <LoginPage /> },
