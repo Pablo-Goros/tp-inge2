@@ -77,7 +77,7 @@ def test_verify_returns_identity_with_name():
     assert ident == google_auth.GoogleIdentity(email=" OP@Itba.Test ", name="Ana Pérez")
 
 
-@pytest.mark.parametrize("name", [None, "", 123])
+@pytest.mark.parametrize("name", [None, "", "   ", 123])
 def test_verify_without_name_claim_gives_none(name):
     ident = google_auth.verify_google_id_token(make_token(name=name), CLIENT_ID)
     assert ident.email == "op@itba.test"
@@ -198,7 +198,7 @@ def test_google_signup_creates_student(client, users, google_env, session):
     claims = jwt.decode(body["access_token"], get_settings().jwt_secret, algorithms=["HS256"])
     assert claims["sub"] == str(u.id) and claims["role"] == "student"
     me = client.get("/api/me/certificates", headers={"Authorization": f"Bearer {body['access_token']}"})
-    assert me.status_code != 401
+    assert me.status_code == 200
 
 
 def test_google_signup_normalizes_email_and_trims_name(client, users, google_env, session):

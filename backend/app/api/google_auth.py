@@ -52,4 +52,4 @@ def verify_google_id_token(credential: str, client_id: str) -> GoogleIdentity:
     if claims.get("email_verified") is not True or not isinstance(email, str):
         raise InvalidGoogleToken("email no verificado")
     name = claims.get("name")
-    return GoogleIdentity(email=email, name=name if isinstance(name, str) and name else None)
+    return GoogleIdentity(email=email, name=(name.strip() or None) if isinstance(name, str) else None)
