@@ -21,11 +21,11 @@ Con `VITE_API=http` el backend debe estar arriba con `docker compose up -d --bui
 El botón "Ingresar con Google" aparece solo si `VITE_GOOGLE_CLIENT_ID` tiene valor. Sin él, el login es solo email y contraseña. No se commitea ningún Client ID.
 
 1. En Google Cloud Console, APIs y servicios, Credenciales: crear una credencial "ID de cliente de OAuth" de tipo **Aplicación web**.
-2. En "Orígenes autorizados de JavaScript" agregar `http://localhost:5173`, `http://localhost:8080` y el dominio o IP del despliegue.
+2. En "Orígenes autorizados de JavaScript" agregar `http://localhost:5173` y `http://localhost:8080` (estos funcionan sin HTTPS). Google rechaza IPs crudas y orígenes `http://` que no sean localhost, así que en un despliegue (p. ej. la VM de Azure servida en `http://<IP>:8080`) el login con Google no funciona: hace falta un dominio real con HTTPS, agregado también como origen autorizado.
 3. Poner el Client ID en `frontend/.env.local` como `VITE_GOOGLE_CLIENT_ID=...` (ver `.env.example`).
 4. Poner el mismo valor como `GOOGLE_CLIENT_ID` en el `.env` de Docker Compose, para que el backend valide el token.
 
-La identidad se resuelve por email: la cuenta de Google debe tener el mismo email que un usuario sembrado, si no el ingreso se rechaza. En modo mock la credencial es `mock-google:<email>`.
+La identidad se resuelve por email (no por el `sub` de Google), por lo que cambiar el email de la cuenta de Google cambia a qué usuario corresponde: la cuenta de Google debe tener el mismo email que un usuario sembrado, si no el ingreso se rechaza. En modo mock la credencial es `mock-google:<email>`.
 
 ## Mock
 
