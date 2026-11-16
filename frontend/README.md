@@ -14,6 +14,8 @@ npm run build      # typecheck + vite build
 
 `VITE_API=http npm run dev` usa el backend real en `/api` en lugar del mock. Perfiles, directorio y detalle de certificado aún no existen en el backend: con `VITE_API=http` esas pantallas muestran error (ver `docs/frontend-api.md`).
 
+Con `VITE_API=http` el backend debe estar arriba con `docker compose up -d --build`; el proxy de Vite apunta por defecto a http://localhost:8080 y se cambia con `VITE_PROXY_TARGET` (p. ej. http://localhost:8000 si corrés uvicorn directo).
+
 ## Mock
 
 Cuentas (contraseña `demo1234`): `operador@demo.test`, `alumno01@demo.test` … `alumno25@demo.test`.
