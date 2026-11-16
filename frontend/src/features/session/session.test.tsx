@@ -181,6 +181,8 @@ describe('loginWithGoogle', () => {
       <>
         <button onClick={() => auth.loginWithGoogle('mock-google:alumno01@demo.test').catch(() => {})}>google ok</button>
         <button onClick={() => auth.api.loginWithGoogle('basura').catch(() => {})}>google mal</button>
+        <button onClick={() => auth.signupWithGoogle('mock-google:nuevo.alumno@demo.test', 'Nuevo Alumno').catch(() => {})}>signup ok</button>
+        <button onClick={() => auth.api.signupWithGoogle('basura').catch(() => {})}>signup mal</button>
       </>
     );
   }
@@ -203,6 +205,22 @@ describe('loginWithGoogle', () => {
     saveSession(operator);
     const router = renderProbe();
     await userEvent.click(screen.getByRole('button', { name: 'google mal' }));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(router.state.location.pathname).toBe('/probe');
+    expect(loadSession()).not.toBeNull();
+  });
+
+  it('signupWithGoogle guarda usuario y token como login', async () => {
+    renderProbe();
+    await userEvent.click(screen.getByRole('button', { name: 'signup ok' }));
+    await waitFor(() => expect(loadSession()?.user).toEqual({ name: 'Nuevo Alumno', role: 'student' }));
+    expect(loadSession()?.token).toBe('mock:nuevo.alumno@demo.test');
+  });
+
+  it('un 401 en signupWithGoogle no cierra la sesión ni redirige', async () => {
+    saveSession(operator);
+    const router = renderProbe();
+    await userEvent.click(screen.getByRole('button', { name: 'signup mal' }));
     await new Promise((r) => setTimeout(r, 20));
     expect(router.state.location.pathname).toBe('/probe');
     expect(loadSession()).not.toBeNull();

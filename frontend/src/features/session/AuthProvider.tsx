@@ -9,6 +9,7 @@ interface AuthValue {
   user: SessionUser | null;
   login(email: string, password: string): Promise<SessionUser>;
   loginWithGoogle(credential: string): Promise<SessionUser>;
+  signupWithGoogle(credential: string, name?: string): Promise<SessionUser>;
   logout(): void;
   /** Cliente de API que cierra la sesión y lleva a /login ante cualquier 401. */
   api: ApiClient;
@@ -28,6 +29,7 @@ function withUnauthorized(client: ApiClient, onUnauthorized: () => void): ApiCli
   return {
     login: client.login.bind(client), // un 401 en login es "credenciales inválidas", no sesión vencida
     loginWithGoogle: (c) => client.loginWithGoogle(c), // lazy (fakes sin él); idem login: un 401 no es sesión vencida
+    signupWithGoogle: (c, n) => client.signupWithGoogle(c, n), // lazy y sin guard, como loginWithGoogle
     createBatch: guard(client.createBatch.bind(client)),
     listBatches: guard(client.listBatches.bind(client)),
     getBatch: guard(client.getBatch.bind(client)),
@@ -71,6 +73,12 @@ export function AuthProvider({ client = defaultApi, children }: { client?: ApiCl
     },
     async loginWithGoogle(credential) {
       const res = await client.loginWithGoogle(credential);
+      saveSession({ token: res.token, user: res.user });
+      setUser(res.user);
+      return res.user;
+    },
+    async signupWithGoogle(credential, name) {
+      const res = await client.signupWithGoogle(credential, name);
       saveSession({ token: res.token, user: res.user });
       setUser(res.user);
       return res.user;

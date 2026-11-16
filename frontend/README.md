@@ -25,7 +25,7 @@ El botón "Ingresar con Google" aparece solo si `VITE_GOOGLE_CLIENT_ID` tiene va
 3. Poner el Client ID en `frontend/.env.local` como `VITE_GOOGLE_CLIENT_ID=...` (ver `.env.example`).
 4. Poner el mismo valor como `GOOGLE_CLIENT_ID` en el `.env` de Docker Compose, para que el backend valide el token.
 
-La identidad se resuelve por email (no por el `sub` de Google), por lo que cambiar el email de la cuenta de Google cambia a qué usuario corresponde: la cuenta de Google debe tener el mismo email que un usuario sembrado, si no el ingreso se rechaza. En modo mock la credencial es `mock-google:<email>`.
+La identidad se resuelve por email (no por el `sub` de Google), por lo que cambiar el email de la cuenta de Google cambia a qué usuario corresponde. Si el email ya tiene cuenta, entra con su rol. Si no (el backend responde 404 `NOT_FOUND`), el login muestra un paso de bienvenida ("¡Bienvenido/a!") con el nombre precargado desde el token y editable; "Crear mi cuenta de alumno" llama a `signupWithGoogle` y entra como alumno (nunca como operador); "Volver" regresa al formulario sin crear nada. Si el alta falla por red se puede reintentar. En modo mock la credencial es `mock-google:<email>`; un email desconocido da 404 y el alta lo agrega en memoria.
 
 ## Mock
 

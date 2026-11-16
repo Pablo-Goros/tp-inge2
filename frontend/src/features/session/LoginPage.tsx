@@ -4,6 +4,7 @@ import { ApiError, isMockApi } from '../../api';
 import { Alert, Button, Field } from '../../components/ui';
 import { homeFor, useAuth } from './AuthProvider';
 import { GoogleButton } from './GoogleButton';
+import { GoogleWelcome } from './GoogleWelcome';
 
 const BAD_CREDS = 'Email o contraseña incorrectos. Revisá los datos e intentá de nuevo.';
 
@@ -16,7 +17,7 @@ function messageFor(e: unknown): string {
 }
 
 export function LoginPage() {
-  const { user, login, loginWithGoogle } = useAuth();
+  const { user, login, loginWithGoogle, signupWithGoogle } = useAuth();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const navigate = useNavigate();
   const expired = (useLocation().state as { expired?: boolean } | null)?.expired;
@@ -24,6 +25,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [welcome, setWelcome] = useState<string | null>(null); // credencial de Google sin cuenta: paso de alta
 
   if (user && !loading) return <Navigate to={homeFor(user.role)} replace />;
 
@@ -49,6 +51,20 @@ export function LoginPage() {
       const u = await loginWithGoogle(credential);
       navigate(homeFor(u.role), { replace: true });
     } catch (e) {
+      if (e instanceof ApiError && e.status === 404) setWelcome(credential); // email sin cuenta: ofrecer el alta
+      else setError(messageFor(e));
+      setLoading(false);
+    }
+  }
+
+  async function onSignup(name: string) {
+    if (loading || !welcome) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const u = await signupWithGoogle(welcome, name || undefined);
+      navigate(homeFor(u.role), { replace: true });
+    } catch (e) {
       setError(messageFor(e));
       setLoading(false);
     }
@@ -70,6 +86,10 @@ export function LoginPage() {
         </ul>
       </section>
       <section className="login-side">
+        {welcome ? (
+          <GoogleWelcome credential={welcome} loading={loading} error={error} onConfirm={onSignup}
+            onCancel={() => { setWelcome(null); setError(null); }} />
+        ) : (
         <form className="card login-card" onSubmit={onSubmit} aria-busy={loading || undefined} noValidate>
           <h2 className="login-h">Ingresar</h2>
           {/* role="alert" es una región aria-live asertiva: el lector anuncia el error al aparecer. */}
@@ -91,6 +111,7 @@ export function LoginPage() {
             <span className="help">No hace falta cuenta para verificar.</span>
           </div>
         </form>
+        )}
         {isMockApi && (
           <p className="help login-mock">Modo demo: operador@demo.test o alumno01@demo.test, contraseña demo1234.</p>
         )}
