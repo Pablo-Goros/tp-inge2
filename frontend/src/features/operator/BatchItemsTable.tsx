@@ -13,6 +13,9 @@ export function sortItems(items: BatchItem[]): BatchItem[] {
   return items.map((it, n) => ({ it, n })).sort((a, b) => rank(a.it) - rank(b.it) || a.n - b.n).map((x) => x.it);
 }
 
+/** Nota final con 2 decimales; "—" si falta. */
+const gradeText = (i: BatchItem) => (i.final_grade == null ? '—' : i.final_grade.toFixed(2));
+
 const showsAttemptsOfMax = (i: BatchItem) => i.status === 'FAILED' || i.status === 'PROCESSING' || isRetry(i);
 const attemptsText = (i: BatchItem) => (showsAttemptsOfMax(i) ? `${i.attempts}/${MAX_ATTEMPTS}` : String(i.attempts));
 
@@ -53,13 +56,14 @@ export function BatchItemsTable({ items, showGroup, failedCount, caption }: Prop
         { key: 'name', header: 'Alumno', render: (i) => i.student_name },
         { key: 'email', header: 'Email', render: (i) => i.student_email },
         { key: 'st', header: 'Estado', render: (i) => <CertStatusBadge status={i.status} attempts={i.attempts} maxAttempts={MAX_ATTEMPTS} /> },
+        { key: 'grade', header: 'Nota', render: (i) => (i.final_grade == null ? <span className="help">—</span> : gradeText(i)) },
         { key: 'att', header: 'Intentos', render: (i) => attemptsText(i) },
         { key: 'det', header: 'Último error / certificado', render: (i) => <Detail item={i} /> },
       ]}
       renderCard={(i) => (
         <div className={i.status === 'FAILED' ? 'mi mi-fail' : 'mi'}>
           <div className="mi-head"><b>{i.student_name}</b><CertStatusBadge status={i.status} attempts={i.attempts} maxAttempts={MAX_ATTEMPTS} /></div>
-          <span className="help">{i.student_email}</span>
+          <span className="help">{i.student_email}{i.final_grade != null && ` · Nota ${gradeText(i)}`}</span>
           {showsAttemptsOfMax(i) || i.status === 'ISSUED' ? (
             <span style={{ fontSize: 12 }}>
               {showsAttemptsOfMax(i) && attemptsText(i)}
