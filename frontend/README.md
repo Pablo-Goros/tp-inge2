@@ -12,7 +12,7 @@ npm run typecheck  # tsc --noEmit
 npm run build      # typecheck + vite build
 ```
 
-`VITE_API=http npm run dev` usa el backend real en `/api` en lugar del mock.
+`VITE_API=http npm run dev` usa el backend real en `/api` en lugar del mock. Perfiles, directorio y detalle de certificado aún no existen en el backend: con `VITE_API=http` esas pantallas muestran error (ver `docs/frontend-api.md`).
 
 ## Mock
 

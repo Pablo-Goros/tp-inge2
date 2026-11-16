@@ -7,17 +7,17 @@ Fuente: [contracts.md](contracts.md) §2 y §5. El cliente está definido en `fr
 | Método y ruta | Rol | Método del cliente | Notas |
 | --- | --- | --- | --- |
 | `POST /api/auth/login` | público | `login` | 401 = credenciales inválidas |
-| `POST /api/batches` (multipart + `Idempotency-Key`) | operator | `createBatch` | 400 con `details` de filas (`row`, `email`, `reason`); 409 si la clave se reusa con otro contenido |
+| `POST /api/batches` (multipart + `Idempotency-Key`) | operator | `createBatch` | 400 con `details`: filas (`row` >= 1, `email`, `reason`: `INVALID_EMAIL`, `NO_ACCOUNT`, `DUPLICATE_IN_FILE`, `ALREADY_REQUESTED`, `EMPTY_ROW`, `INVALID_FIELD_COUNT`, `INVALID_GRADE`) o error de archivo (`{row: 0, reason}`: `EMPTY_FILE`, `INVALID_ENCODING`, `MALFORMED_CSV`, `MISSING_EMAIL_COLUMN`, `DUPLICATE_COLUMN`, `UNKNOWN_COLUMN`, `NO_DATA_ROWS`, `TOO_MANY_ROWS`, `FILE_TOO_LARGE`); fecha futura (hoy en America/Argentina/Buenos_Aires) y `course_name` > 200 también dan 400; 409 si la clave se reusa con otro contenido |
 | `GET /api/batches` | operator | `listBatches` | sin paginación; filtros y orden en el cliente |
-| `GET /api/batches/{id}` | operator | `getBatch` | se consulta cada 2 s mientras `IN_PROGRESS` |
+| `GET /api/batches/{id}` | operator | `getBatch` | se consulta cada 2 s mientras `IN_PROGRESS`; cada ítem trae `final_grade` (número 0-10 o `null`), que se muestra en la columna «Nota» |
 | `GET /api/me/certificates` | student | `listMyCertificates` | |
 | `GET /api/certificates/{id}/pdf` | alumno dueño u operador | `downloadCertificatePdf` | blob `application/pdf` |
-| `GET /api/verify/{cert_id}` | público | `getPublicCertificate` | 404 `NOT_FOUND`, 503 `UNAVAILABLE` |
-| `POST /api/verify/{cert_id}/file` | público | `verifyFile` | `VALID`/`ALTERED`/`NOT_FOUND`; un 503 se devuelve como `UNAVAILABLE` |
+| `GET /api/verify/{cert_id}` | público | `getPublicCertificate` | 404 `NOT_FOUND`, 503 `UNAVAILABLE`; un `cert_id` que no es UUID da 400 `VALIDATION_ERROR` (la pantalla lo muestra como error genérico) |
+| `POST /api/verify/{cert_id}/file` | público | `verifyFile` | `VALID`/`ALTERED`/`NOT_FOUND`; un 503 se devuelve como `UNAVAILABLE`; más de 5 MiB da 400 (la UI ya lo previene) |
 
 Todos los errores usan el envelope `{ error: { code, message, details } }` y se convierten en `ApiError` (`status`, `code`, `details`; `code = 'NETWORK'` si no hubo respuesta). Un 401 en cualquier llamada autenticada cierra la sesión y lleva a `/login`.
 
-## Campos que le pedimos al equipo (hoy el frontend los muestra solo si vienen)
+## Campos que el frontend esperaría (confirmado ausente en main; se muestran solo si vienen)
 
 | Dónde | Campo | Para qué |
 | --- | --- | --- |
@@ -25,7 +25,7 @@ Todos los errores usan el envelope `{ error: { code, message, details } }` y se 
 | `GET /verify/{cert_id}` | `issued_at` | Fecha de emisión en la verificación |
 | `GET /batches/{id}` | `created_at` | «creado dd/mm/aaaa» en el detalle (ya viene en el listado) |
 | `GET /batches` y `/batches/{id}` | código corto de lote | Se muestra `#7F3A…` (4 primeros hex del uuid, sin número correlativo); no hace falta campo nuevo salvo que prefieran otro formato |
-| `POST /batches` (CSV) | columnas `nombre`+`email` o solo `email` | El contrato dice una sola columna `email`; el diseño muestra ambas. El mock acepta las dos. Formato exacto, ejemplo y ayuda: `frontend/src/config/pending.ts` (`TODO(equipo)`) |
+| `POST /batches` (CSV) | columnas `email` (obligatoria) y `final_grade` (opcional) | Alineado con el backend: cualquier otra columna da `UNKNOWN_COLUMN` (400, fila 0). UTF-8, coma, 1-100 filas, hasta 1 MB, sin líneas vacías intermedias; `final_grade` 0-10 con hasta 2 decimales. Ejemplo y ayuda: `frontend/src/config/pending.ts` |
 | `/verify` sin `cert_id` | — | El contrato verifica por `cert_id`; el enlace «Verificar un certificado» del login lleva a `/verify`. `TODO(equipo)`: definir qué se muestra sin id. Provisorio (etapa 3): campo «Identificador del certificado» que navega a `/verify/:id` |
 
 ## Cuentas y escenarios del mock
@@ -51,8 +51,8 @@ Sin escenario, la validación del CSV es real: los 4 motivos (`INVALID_EMAIL`, `
 
 ## TODO(equipo) pendientes (`grep -rn "TODO(equipo)" frontend/src`)
 
-- `frontend/src/api/types.ts`: `created_at` (detalle de lote), `institution` (mis certificados) e `issued_at` (verificación pública) no están en contracts §5; el frontend los muestra solo si vienen.
-- `frontend/src/config/pending.ts`: CSV `nombre`+`email` (diseño) vs solo `email` (contrato); formato exacto, ejemplo y texto de ayuda; enlace/archivo de ejemplo definitivo (hoy se genera en el navegador).
+- `frontend/src/api/types.ts`: `created_at` (detalle de lote), `institution` (mis certificados), `issued_at` (verificación pública) y `CertificateDetail.sha256` están confirmados como ausentes en main; el frontend los muestra solo si vienen.
+- `frontend/src/config/pending.ts`: texto de ayuda y enlace/archivo de ejemplo definitivo (hoy se genera en el navegador). El formato del CSV (`email`, `final_grade`) ya coincide con el backend.
 - `frontend/src/app/routes.tsx` y `features/verify/VerifyLookup.tsx`: qué mostrar en `/verify` sin `cert_id`.
 
 ## Guards y pantallas globales
@@ -61,7 +61,7 @@ Sin sesión o con rol incorrecto en una ruta protegida: 403 en el lugar (sin red
 
 ## Perfiles (alumnos y tutores)
 
-> TODO(equipo): el backend **aún no tiene** estos endpoints. El frontend los consume desde el mock (por defecto) o desde `/api` con `VITE_API=http`. "Tutor" en la UI = rol `operator` del sistema (no hay rol nuevo). El perfil es **siempre público**; no hay toggle público/privado.
+> **PENDIENTE DE BACKEND (confirmado contra main):** `/me/profile`, `/me/profile/avatar`, `/profiles`, `/profiles/{slug}`, `/profiles/slug-available` y `GET /certificates/{id}` **no existen** en el backend; con `VITE_API=http` esas llamadas dan 404/405 y las pantallas de perfil, el directorio, la home de perfiles y el detalle de certificado muestran el estado de error. Solo funcionan con el mock (por defecto). Decisión: no se hace un cliente híbrido; queda pendiente de que el backend los implemente. TODO(equipo): el backend **aún no tiene** estos endpoints. El frontend los consume desde el mock (por defecto) o desde `/api` con `VITE_API=http`. "Tutor" en la UI = rol `operator` del sistema (no hay rol nuevo). El perfil es **siempre público**; no hay toggle público/privado.
 
 | Endpoint | Auth | Notas |
 |---|---|---|
@@ -71,7 +71,7 @@ Sin sesión o con rol incorrecto en una ruta protegida: 403 en el lugar (sin red
 | `GET /api/profiles/{slug}` | **no** | Perfil público; 404 si no existe. Ya viene sin las secciones ocultas. |
 | `GET /api/profiles?q=&role=&skill=&page=` | **no** | `ProfileSummary[]` (12 por página). `role`: `student` \| `operator`. |
 | `GET /api/profiles/slug-available?slug=` | sí | `{available: boolean}`; el slug propio cuenta como disponible. |
-| `GET /api/certificates/{id}` | sí | `CertificateDetail` (alumno: solo los propios). `sha256` es opcional: TODO(equipo). |
+| `GET /api/certificates/{id}` | sí | `CertificateDetail` (alumno: solo los propios). `sha256` es opcional (confirmado ausente en main). **Este endpoint no existe en el backend actual.** |
 
 **Forma de `Profile`** (ver `src/api/types.ts`): identidad (`slug` kebab único, `displayName`, `headline`, `pronouns?`, `location`, `avatarUrl` siempre presente, `coverStyle` entre 8 portadas generadas, `role`, `about`, `openTo?`, `availability?`, `contactEmail?`, `links[]`); secciones CV (`experience`, `education`, `skills` con `level` 1-5, `languages`, `projects`, `achievements`, `publications`, `volunteering`, `interests`, `certificatesFeatured` = ids de `/me/certificates`); extras de alumno (`studyGoals?`, `lookingFor?`) y de tutor (`specialties`, `subjectsTaught`, `teachingYears`, `modality`, `officeHours`, `teachingApproach`); `institution`; `hiddenSections: SectionKey[]`. La completitud **no se guarda**: `profileCompleteness(profile)` en `src/api/profileUtils.ts`.
 
