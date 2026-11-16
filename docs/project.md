@@ -1,6 +1,6 @@
 # Proyecto: certificados académicos verificables
 
-Plan iniciado el 08/11/2026; decisiones de producto actualizadas el 09/11/2026. El equipo confirmó emisión por lote con RabbitMQ, cuatro integrantes con poca disponibilidad, blockchain local y presupuesto monetario cero. El usuario confirmó el alcance base al finalizar la entrevista. Las decisiones funcionales señaladas como confirmadas son el acuerdo de producto; el stack y la estructura interna son la propuesta técnica elaborada por pedido del equipo. Todavía no hay software implementado.
+Plan iniciado el 08/11/2026. Actualización de implementación, 16/11: API y publicador de B, worker/registro/verificación de C y Compose de D están integrados en `frente-c`. El alcance vigente usa un **registro simulado en PostgreSQL**; blockchain es una ampliación opcional fuera de esta entrega. Frontend y despliegue cloud siguen pendientes. El contrato vigente está en [contracts.md](contracts.md); los acuerdos originales siguientes conservan su contexto histórico.
 
 ## Propósito y usuarios
 
@@ -40,7 +40,7 @@ Historia central: como operador, quiero solicitar certificados para los alumnos 
 | Carga de lote | Confirmada por el equipo | CSV de aprobados; se rechaza completo indicando qué corregir si alguna fila tiene datos inválidos (confirmado). Formato y límite propuesto de 100 filas pendientes de especificación |
 | Procesamiento asincrónico | Obligatoria | Solicitud persistida, respuesta sin esperar toda la emisión, un trabajo por certificado |
 | Recuperación y duplicados | Obligatoria | Recuperar trabajos tras caída; reintentos limitados; misma solicitud no crea otra emisión |
-| Registro blockchain | Obligatoria para este recorte | Contrato mínimo en red EVM local, con emisor autorizado y huellas de certificados |
+| Registro de huellas | Obligatoria para el recorte vigente | Registro simulado de solo inserción en PostgreSQL; interfaz preparada para otra implementación |
 | Consulta y descarga | Confirmada por el equipo | Operador consulta lotes; alumno accede a “Mis certificados” y descarga sus PDFs con QR |
 | Verificación | Confirmada por el equipo | Consulta pública por QR de los datos registrados y subida del PDF para comparar su huella con el contrato |
 | Visibilidad de errores | Obligatoria | Fallos identificables, cola de fallidos y logs correlacionados |

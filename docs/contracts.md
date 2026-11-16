@@ -1,6 +1,6 @@
 # Contratos entre frentes (Paso 0)
 
-Version 1.2, 15/11/2026. Los cambios de Parte B fueron revisados por su responsable; no se atribuye aprobacion a los otros frentes. Ver [spec B](specs/frente-b-api-publicacion/spec.md) y [division del trabajo](division-del-trabajo.md).
+Versión 1.3, 16/11/2026. Integra el contrato de B y la implementación de C acordada con su responsable: registro simulado, diploma horizontal y recuperación antes del ACK. No se atribuye aprobación a los otros frentes. Ver [spec B](specs/frente-b-api-publicacion/spec.md), [entrega C](specs/frente-c-emision/entrega.md) y [división del trabajo](division-del-trabajo.md).
 
 Las decisiones marcadas **[Decisión propuesta]** son supuestos de quien redactó el documento; no fueron confirmadas por el equipo. Revisarlas antes de aprobar.
 
@@ -44,7 +44,7 @@ docs/
 | `DEMO_PASSWORD` | Contraseña de las cuentas sembradas por `init` (valor de demo en `.env.example`; otra en cloud) |
 | `PUBLIC_BASE_URL` | Base de la URL del QR, p. ej. `http://localhost:8080`. **Fijar antes de emitir el lote de demo**: cambiarla altera el PDF |
 | `REGISTRY_BACKEND` | `simulated` (por defecto) o `chain` (tarea extra) |
-| `MAX_ATTEMPTS` | Reintentos por certificado, por defecto `3` |
+| `MAX_ATTEMPTS` | Intentos totales por certificado (incluido el primero), por defecto `3`, mínimo `1` |
 | `RETRY_DELAY_SECONDS` | Espera entre reintentos, por defecto `5`. Cambiarlo con el broker ya inicializado exige recrear la cola `cert.issue.wait` (RabbitMQ rechaza redeclarar con otro TTL) |
 | `POLL_INTERVAL_SECONDS` | Espera del publicador cuando no hay filas pendientes, por defecto `1.0` |
 | `INIT_TIMEOUT_SECONDS` | Plazo total de `init` para alcanzar PostgreSQL y RabbitMQ, por defecto `60` |
@@ -119,13 +119,15 @@ PENDING ──(worker toma)──► PROCESSING ──(éxito)──► ISSUED
 
 **Algoritmo del worker (contrato de comportamiento, C lo implementa):**
 
-1. Leer la solicitud. Si `status` es `ISSUED` o `FAILED`: ACK y terminar (sin efectos).
+1. Leer la solicitud. Si es `ISSUED`: ACK sin efectos. Si es `FAILED`: no reemitir; publicar a DLQ con confirmación y después ACK, para recuperar una caída durante el traslado anterior.
 2. Marcar `PROCESSING`, incrementar `attempts`.
 3. Si ya existe `certificates` para el id, reutilizar esos bytes y hash; si no, generar PDF+QR **una sola vez** y guardar `pdf` y `sha256`.
 4. `registry.register(cert_id, sha256)` (idempotente, ver §7).
 5. Marcar `ISSUED` y hacer ACK. El ACK es siempre el último paso.
-6. Falla transitoria con `attempts < MAX_ATTEMPTS`: volver a `PENDING` y `nack(requeue=false)`; el dead-letter lo lleva a la cola de espera y de vuelta a la cola de trabajo. Falla permanente o intentos agotados: marcar `FAILED` con `last_error`, **publicar el mensaje a `certs` con clave `dlq` y luego hacer ACK** (un `nack` no podría distinguir destino: la cola de trabajo tiene un único dead-letter exchange). El error queda en la base aunque falle la publicación a la DLQ.
+6. Falla transitoria con `attempts < MAX_ATTEMPTS`: volver a `PENDING` y `nack(requeue=false)`; el dead-letter lo lleva a la cola de espera y de vuelta a la cola de trabajo. Falla permanente o intentos agotados: marcar `FAILED` con `last_error`, **publicar a `certs`/`dlq` con mensaje persistente, `mandatory` y publisher confirms, y recién después ACK**. Si falla el traslado, conservar el estado terminal y dejar la entrega sin ACK; cerrar y reconectar con espera creciente. La reentrega repite solo el traslado. La DLQ puede contener duplicados del mismo id después de una caída; la emisión no se duplica.
 7. Tras cualquier caída del worker, el broker reentrega y el paso 1 o 3 evita duplicar.
+
+Antes de fallar una solicitud interrumpida que alcanzó el límite, consultar el registro: una huella coincidente permite cerrar `ISSUED` sin otro intento. Un timeout del registro durante el último intento queda `PROCESSING` hasta poder reconciliarlo; no prueba que la escritura haya fallado. Si PostgreSQL no permite persistir el resultado, no confirmar el mensaje y reconectar con espera. JSON inválido, mensajes de más de 4096 bytes, UUID inválidos o solicitudes inexistentes se trasladan a DLQ sin reintentos de emisión.
 
 **Qué es transitorio / permanente [Decisión propuesta]:** transitorio = error de conexión a PostgreSQL o al registro; permanente = datos inválidos, excepción de generación de PDF, o fallo controlado `permanent` de la inyección de fallos.
 
@@ -198,7 +200,7 @@ El frontend consulta este endpoint cada 2 s mientras el estado sea `IN_PROGRESS`
 ```
 
 - `404` con `{ "error": { "code": "NOT_FOUND", "message": "Certificado no registrado", "details": [] } }` si no está en el registro. **Nunca** se devuelve email, nota ni datos de cuenta. UUID inválido: `400 VALIDATION_ERROR`.
-- `503 UNAVAILABLE` si el registro no responde o la integración de los casos de uso de C aún no está disponible (no confundir con «no registrado»). B delega en C mediante `get_verification`; no usa la existencia de un certificado local como prueba de registro. Los falsos solo se usan en pruebas.
+- `503 UNAVAILABLE` si el registro o los metadatos no pueden consultarse (no confundir con «no registrado»). B delega en C mediante `get_verification`, conectado a `RegistryVerification`; no usa la existencia de un certificado local como prueba de registro. Los falsos solo se usan en pruebas.
 
 **`POST /verify/{cert_id}/file`** (público) — `multipart/form-data`: `file` (hasta 5.242.880 bytes inclusive; 5 MiB). `200`:
 
@@ -208,13 +210,13 @@ El frontend consulta este endpoint cada 2 s mientras el estado sea `IN_PROGRESS`
 
 - El adaptador lee como máximo 5.242.881 bytes y rechaza el exceso con `400 VALIDATION_ERROR`. UUID inválido o archivo ausente también devuelve 400. No persiste la subida ni decide autenticidad por nombre, extensión o MIME.
 - El caso de uso de C calcula SHA-256 del archivo subido y lo compara con `registry.lookup(cert_id)`, **no** con la copia en `certificates`.
-- La dependencia `get_verification` expone `compare_file(cert_id, content)`; C devuelve el resultado y traduce la indisponibilidad a `VerificationUnavailable`. Sin integración C, la ejecución normal responde `503 UNAVAILABLE`; los falsos quedan limitados a pruebas.
+- La dependencia `get_verification` expone `compare_file(cert_id, content)`; C devuelve el resultado y traduce la indisponibilidad a `VerificationUnavailable`. La ejecución normal usa `SimulatedRegistry`; los falsos quedan limitados a pruebas.
 - `VALID`: coincide. `ALTERED`: el id existe y la huella difiere. `NOT_FOUND`: id sin registro. Registro no disponible: `503 UNAVAILABLE`.
 - **[Decisión propuesta]** La verificación de archivo cuelga de un `cert_id`: el QR del PDF apunta a `{PUBLIC_BASE_URL}/verify/{cert_id}` y esa página permite subir el archivo. No se intenta extraer el id desde el PDF subido. *(Cambia respecto del borrador previo, que listaba `POST /verify/file` sin id.)*
 
 ## 6. PDF y QR
 
-- ReportLab + `qrcode`. Un A4 sencillo con: institución, nombre del alumno, curso, fecha de finalización, identificador del certificado, QR.
+- ReportLab + `qrcode`. Diploma A4 horizontal en español con marco sobrio: institución, alumno, curso, fecha de finalización, identificador y QR. Nota final decimal con dos decimales solamente cuando existe; sin logos ni firmas inventadas. Textos largos se ajustan con saltos y tamaño sin truncarlos.
 - El QR codifica `{PUBLIC_BASE_URL}/verify/{cert_id}`. No incluye el hash del PDF (dependencia circular).
 - Los bytes se generan una sola vez y se guardan en `certificates.pdf`; el hash se calcula sobre esos bytes exactos. No usar fechas «ahora» al regenerar: toda fecha dentro del PDF sale de datos persistidos.
 
@@ -243,9 +245,10 @@ class Registry(Protocol):
 - `sample-data/lote-20.csv` (20 emails válidos) y variantes inválidas: `con-error.csv` (email sin cuenta + duplicado en el archivo).
 
 **`FAULT_INJECTION`** (D la usa; C la implementa en el worker; lista separada por comas):
-- `transient:<n>`: el worker falla `n` veces seguidas con error transitorio antes de dejar pasar.
+- `transient:<n>`: las primeras `n` ejecuciones elegibles del proceso fallan antes del registro. El contador es global al proceso, no por alumno, y se reinicia al recrear el worker.
 - `permanent:<email>`: la emisión de ese alumno falla con error permanente.
 - Determinista y repetible; nunca aleatoria.
+- Un fallo permanente del email tiene prioridad sobre el contador transitorio. Configuración inválida impide arrancar el worker; una reconexión al broker conserva el contador.
 
 ## 9. Qué consume cada frente
 

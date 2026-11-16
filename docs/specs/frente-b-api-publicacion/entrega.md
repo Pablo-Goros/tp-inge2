@@ -1,5 +1,7 @@
 # Entrega e integración de Parte B
 
+**Actualización de integración C (16/11/2026):** worker, PDF con nota y registro simulado ya están disponibles en `frente-c`, y `get_verification` usa el adaptador real. La suite integrada pasó 234 pruebas; ver [entrega C](../frente-c-emision/entrega.md) y `evidence/frente-c-tests.txt`. Se conserva debajo el informe histórico de B del 15/11: sus referencias a C ausente describen ese corte anterior, no el estado integrado actual.
+
 Referencia: [spec](spec.md), [tickets](tickets/) y antecedente [plan de B](../../superpowers/plans/2026-11-13-frente-b-api-publicacion.md). Las validaciones pendientes no se consideran realizadas por existir código o pruebas.
 
 ## Dependencias para cerrar 03 y 07

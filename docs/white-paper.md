@@ -158,20 +158,20 @@ Para demostrar estos casos sin depender del azar, el worker admite una **inyecci
 
 ### 5.1 Resultados observados
 
-Ejecutados con Docker Compose en local; cada escenario se corrió dos veces seguidas. Los registros completos están en el Anexo B y en `evidence/`.
+Corrida integrada del 16/11/2026 con Docker Compose local: los diez escenarios terminaron PASS. Hubo corridas previas de diagnóstico y correcciones de los scripts; los logs de `evidence/` y `RESUMEN.txt` corresponden a la corrida final. La suite aislada del backend pasó 234 pruebas sobre PostgreSQL y RabbitMQ reales.
 
 | Escenario | Resultado |
 | --- | --- |
 | CSV con errores (email sin cuenta + repetido) | **Rechazado completo** con `400` y los dos motivos por fila; ningún lote, solicitud ni mensaje creado |
 | Mismo envío HTTP repetido con la misma clave | `200` con el mismo lote; 20 solicitudes, no 40. Misma clave con otro contenido: `409` |
 | Segundo y tercer `docker compose up` sobre datos existentes | La inicialización vuelve a ejecutarse sin duplicar usuarios, lotes ni colas |
-| Lote de 20 alumnos | ⟨PENDIENTE: certificados emitidos, tiempo de aceptación y de finalización⟩ |
-| Worker detenido durante el lote | ⟨PENDIENTE⟩ |
-| Broker detenido al aceptar el lote | ⟨PENDIENTE⟩ |
-| Mensaje ya procesado reenviado a la cola | ⟨PENDIENTE⟩ |
-| Falla transitoria / permanente | ⟨PENDIENTE⟩ |
-| Verificación: original, alterado, inexistente, registro caído | ⟨PENDIENTE⟩ |
-| Permisos del alumno y datos de la consulta pública | ⟨PENDIENTE⟩ |
+| Lote de 20 alumnos | 20 certificados y registros distintos; aceptación 1922 ms, finalización 8642 ms desde el POST en una corrida local con sondeo cada 2 s; no es un benchmark |
+| Worker detenido durante el lote | Se detuvo con 1 emitido y 19 mensajes pendientes; ninguno avanzó durante la caída; al volver completó los 20 sin duplicados |
+| Broker detenido al aceptar el lote | `201` con 20 filas de outbox pendientes; al volver el broker terminó la emisión de las 20 |
+| Mensaje ya procesado reenviado a la cola | Conservó un único PDF y registro por solicitud |
+| Falla transitoria / permanente | Dos trabajos reintentados terminaron emitidos; fallo permanente aislado: 19 ISSUED, 1 FAILED visible y mensaje en DLQ, sin descarga del fallido |
+| Verificación: original, alterado, inexistente, registro caído | VALID, ALTERED y NOT_FOUND respectivamente; PostgreSQL detenido devolvió 503; al volver recuperó VALID |
+| Permisos del alumno y datos de la consulta pública | Descarga propia permitida, ajena rechazada, acciones de operador prohibidas y consulta pública sin email ni nota |
 | Despliegue en la nube y consumo de memoria | ⟨PENDIENTE: proveedor, tamaño de VM, `docker stats` durante un lote⟩ |
 
 ### 5.2 Limitaciones
@@ -205,7 +205,7 @@ Ver `README.md`: requisitos, `docker compose up`, usuarios de demo y endpoints. 
 
 ## Anexo B. Escenarios y evidencia
 
-Scripts en `scripts/scenarios/`; salidas en `evidence/`. ⟨PENDIENTE: tabla final con cada escenario, comando y extracto del log⟩
+Scripts en `scripts/scenarios/`; salidas completas y resumen de los diez PASS en `evidence/`. Comando de la corrida: `bash scripts/run-all.sh`. La entrega de C y `evidence/frente-c-tests.txt` documentan los procesos reales interrumpidos y la suite aislada.
 
 ## Anexo C. Referencias
 

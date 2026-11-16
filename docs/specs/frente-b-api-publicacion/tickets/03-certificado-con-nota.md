@@ -1,7 +1,7 @@
 # 03: Emitir y descargar el certificado con nota mediante C
 
 **Spec:** [Frente B: API, base de datos y publicación](../spec.md)
-**Status:** blocked — dependencia externa C no disponible; ver [entrega](../entrega.md)
+**Status:** done — integración real validada el 16/11 en `frente-c`; ver [entrega C](../../frente-c-emision/entrega.md) y `evidence/frente-c-tests.txt` (234 pruebas).
 
 ## What to build
 
@@ -11,13 +11,13 @@ El certificado sigue siendo de finalización: una nota baja no dispara rechazo p
 
 ## Acceptance criteria
 
-- [ ] Una solicitud aceptada con nota llega al worker con el mismo identificador y C obtiene la nota decimal persistida sin cambiar el mensaje AMQP.
-- [ ] El recorrido real hasta ISSUED permite al alumno dueño y al operador de su institución descargar el PDF con institución, alumno, curso, fecha, identificador, QR y nota correcta.
-- [ ] Una solicitud sin nota produce un PDF sin un valor inventado o una etiqueta vacía de nota.
-- [ ] La huella y el registro corresponden a los bytes definitivos del PDF que contiene la nota; no se modifica el documento después de calcular la huella.
-- [ ] Reentregar un identificador ya emitido reutiliza el certificado guardado, sin generar otro ni cambiar bytes, nota o huella.
-- [ ] Los certificados anteriores no se regeneran al incorporar esta función y continúan descargándose según permisos.
-- [ ] Se obtiene evidencia de integración con PostgreSQL, RabbitMQ y el worker real de C; un stub de emisión no satisface este cierre. No depende de que las rutas públicas de los tickets 04/05 estén listas.
+- [x] Una solicitud aceptada con nota llega al worker con el mismo identificador y C obtiene la nota decimal persistida sin cambiar el mensaje AMQP.
+- [x] El recorrido real hasta ISSUED permite al alumno dueño y al operador de su institución descargar el PDF con institución, alumno, curso, fecha, identificador, QR y nota correcta.
+- [x] Una solicitud sin nota produce un PDF sin un valor inventado o una etiqueta vacía de nota.
+- [x] La huella y el registro corresponden a los bytes definitivos del PDF que contiene la nota; no se modifica el documento después de calcular la huella.
+- [x] Reentregar un identificador ya emitido reutiliza el certificado guardado, sin generar otro ni cambiar bytes, nota o huella.
+- [x] Los certificados anteriores no se regeneran al incorporar esta función y continúan descargándose según permisos.
+- [x] Se obtiene evidencia de integración con PostgreSQL, RabbitMQ y el worker real de C; un stub de emisión no satisface este cierre. No depende de que las rutas públicas de los tickets 04/05 estén listas.
 
 ## Blocked by
 
