@@ -4,7 +4,8 @@ from io import BytesIO
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
-from pypdf import PdfReader
+from pypdf import PdfReader, PdfWriter
+from pypdf.generic import DecodedStreamObject
 from sqlalchemy import select
 
 from app.api.main import create_app
@@ -58,6 +59,17 @@ def test_real_http_batch_to_worker_download_and_public_verification(issuance_db,
                                           "course_name", "completion_date"}
             assert client.post(f"/api/verify/{cert_id}/file", files={"file": ("x.pdf", pdf)}).json() == {"result": "VALID"}
             assert client.post(f"/api/verify/{cert_id}/file", files={"file": ("x.pdf", pdf + b"x")}).json() == {"result": "ALTERED"}
+            if item["final_grade"] is not None:
+                reader = PdfReader(BytesIO(pdf))
+                writer = PdfWriter(clone_from=reader)
+                stream = DecodedStreamObject()
+                stream.set_data(reader.pages[0].get_contents().get_data().replace(b"9.75", b"8.75"))
+                writer.pages[0].replace_contents(stream)
+                altered = BytesIO()
+                writer.write(altered)
+                assert "Nota final: 8.75" in PdfReader(altered).pages[0].extract_text()
+                assert client.post(f"/api/verify/{cert_id}/file", files={
+                    "file": ("nota-alterada.pdf", altered.getvalue())}).json() == {"result": "ALTERED"}
             other_email = "alumno02@demo.test" if item["student_email"] == "alumno01@demo.test" else "alumno01@demo.test"
             assert client.get(f"/api/certificates/{cert_id}/pdf", headers=token(client, other_email)).status_code == 404
         ghost = uuid4()

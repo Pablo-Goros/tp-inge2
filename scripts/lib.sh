@@ -76,7 +76,7 @@ step() { echo "-- $*"; }
 # assert_eq <esperado> <obtenido> <mensaje>: corta el escenario con FAIL si difieren.
 assert_eq() {
   if [[ "$1" == "$2" ]]; then
-    echo "   ok    $3 = $2"
+    echo "   ok    $3 = ${2:-<vacío>}"
   else
     echo "   FAIL  $3: esperado '$1', obtenido '$2'"
     exit 1
