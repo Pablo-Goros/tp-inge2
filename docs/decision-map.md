@@ -1,5 +1,7 @@
 # Mapa de decisiones
 
+**Actualización 16/11:** el alcance vigente de C usa registro simulado, diploma A4 horizontal y nota opcional; B, C y la infraestructura de D se integran en `frente-c`. Los contratos HTTP, esquema y mensajes están definidos en [contracts.md](contracts.md). Los pendientes de especificación y referencias a blockchain que se conservan abajo pertenecen al análisis inicial.
+
 ## Destino
 
 Definir producto, alcance y arquitectura realizables por cuatro integrantes con pocas horas hasta el 19/11/2026, preservando una PoC defendible y todos los entregables académicos.

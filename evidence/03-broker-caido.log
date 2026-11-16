@@ -1,4 +1,4 @@
-# 2026-11-15T02:51:03Z · commit ce3efd1 · http://localhost:8080
+# 2026-11-16T05:12:53Z · commit 01f2081 · http://localhost:8080
 == Escenario 03-broker-caido
 -- 1. Detener RabbitMQ
    ok    rabbitmq corriendo = false
@@ -10,7 +10,9 @@
    ok    rabbitmq arriba (healthy)
 -- 5. El publicador se reconecta solo y publica las 20
    ok    filas de outbox sin publicar = 0
-   (publicadas 0 s después de que el broker volvió)
+   (publicadas 23 s después de que el broker volvió)
 -- 6. El lote termina de emitirse
-   PENDIENTE: requiere el worker real (frente C); hoy compose.yaml usa un placeholder
-== PENDIENTE 03-broker-caido
+   ok    estado del lote = COMPLETED
+   ok    certificados del lote = 20
+   ok    entradas de registry del lote = 20
+== PASS 03-broker-caido

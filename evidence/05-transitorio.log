@@ -1,4 +1,16 @@
-# 2026-11-15T02:51:17Z · commit ce3efd1 · http://localhost:8080
+# 2026-11-16T05:14:02Z · commit 01f2081 · http://localhost:8080
 == Escenario 05-transitorio
-   PENDIENTE: requiere el worker real (frente C); hoy compose.yaml usa un placeholder
-== PENDIENTE 05-transitorio
+-- 1. Recrear el worker con FAULT_INJECTION=transient:2
+   ok    variable del worker = FAULT_INJECTION=transient:2
+   ok    worker arriba (running)
+-- 2. Subir lote-20.csv
+-- 3. El lote termina completo pese a las fallas
+   ok    estado del lote = COMPLETED
+   ok    solicitudes ISSUED = 20
+   ok    solicitudes FAILED = 0
+   ok    hubo reintentos (máx. intentos = 2)
+   ok    mensajes en la DLQ (ninguno nuevo) = 1
+   solicitudes reintentadas:
+     alumno04@demo.test -> intentos: 2
+     alumno05@demo.test -> intentos: 2
+== PASS 05-transitorio

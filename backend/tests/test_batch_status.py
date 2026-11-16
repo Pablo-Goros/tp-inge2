@@ -75,7 +75,7 @@ def test_detail_includes_last_error_and_attempts(client, session, users):
     assert body["status"] == "COMPLETED_WITH_ERRORS"
     ok, bad = body["items"]
     assert ok == {"certificate_id": str(reqs[0].id), "student_name": "Alumno 00",
-                  "student_email": f"{b.id}-0@itba.test", "status": "ISSUED", "attempts": 0, "last_error": None}
+                  "student_email": f"{b.id}-0@itba.test", "status": "ISSUED", "attempts": 0, "last_error": None, "final_grade": None}
     assert bad["attempts"] == 3 and bad["last_error"] == "boom" and bad["status"] == "FAILED"
 
 

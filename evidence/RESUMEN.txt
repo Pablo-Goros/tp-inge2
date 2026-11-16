@@ -1,12 +1,12 @@
-# 2026-11-15T02:51:02Z · commit ce3efd1 · http://localhost:8080
+# 2026-11-16T05:11:25Z · commit 01f2081 · http://localhost:8080
 ESCENARIO                  RESULTADO  DURACION
-01-lote-20                 PENDIENTE  1s
-02-worker-caido            PENDIENTE  0s
-03-broker-caido            PENDIENTE  13s
-04-mensaje-repetido        PENDIENTE  1s
-05-transitorio             PENDIENTE  0s
-06-permanente              PENDIENTE  1s
-07-csv-invalido            PASS       0s
-08-verificacion            PENDIENTE  1s
-09-alumno-permisos         PENDIENTE  0s
-10-segundo-up              PASS       5s
+01-lote-20                 PASS       19s
+02-worker-caido            PASS       68s
+03-broker-caido            PASS       49s
+04-mensaje-repetido        PASS       19s
+05-transitorio             PASS       34s
+06-permanente              PASS       31s
+07-csv-invalido            PASS       9s
+08-verificacion            PASS       36s
+09-alumno-permisos         PASS       12s
+10-segundo-up              PASS       40s

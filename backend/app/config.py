@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     demo_password: str = "demo1234"
     public_base_url: str = "http://localhost:8080"
     registry_backend: str = "simulated"
-    max_attempts: int = 3
-    retry_delay_seconds: int = 5
+    max_attempts: int = Field(default=3, ge=1)
+    retry_delay_seconds: int = Field(default=5, ge=1)
     fault_injection: str = ""
     init_timeout_seconds: int = 60
     bcrypt_rounds: int = 12

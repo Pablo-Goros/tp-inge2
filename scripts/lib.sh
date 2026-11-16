@@ -13,6 +13,15 @@
 
 set -euo pipefail
 
+# Native Windows jq otherwise inserts CR into tokens captured by Git Bash.
+if [[ "${OSTYPE:-}" == msys* ]]; then
+  jq() { command jq --binary "$@"; }
+fi
+
+native_path() {
+  if [[ "${OSTYPE:-}" == msys* ]]; then cygpath -m "$1"; else echo "$1"; fi
+}
+
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"   # docker compose necesita la carpeta del compose.yaml
 
@@ -67,7 +76,7 @@ step() { echo "-- $*"; }
 # assert_eq <esperado> <obtenido> <mensaje>: corta el escenario con FAIL si difieren.
 assert_eq() {
   if [[ "$1" == "$2" ]]; then
-    echo "   ok    $3 = $2"
+    echo "   ok    $3 = ${2:-<vacío>}"
   else
     echo "   FAIL  $3: esperado '$1', obtenido '$2'"
     exit 1
@@ -81,7 +90,11 @@ pending() { echo "   PENDIENTE: $*"; _PENDING=1; exit "$EXIT_PENDING"; }
 
 # ---------- utilidades ----------
 
-new_key() { uuidgen 2>/dev/null | tr 'A-Z' 'a-z' || cat /proc/sys/kernel/random/uuid; }
+new_key() {
+  if command -v uuidgen >/dev/null 2>&1; then uuidgen | tr 'A-Z' 'a-z'
+  elif [[ -r /proc/sys/kernel/random/uuid ]]; then cat /proc/sys/kernel/random/uuid
+  else docker compose exec -T api python -c 'import uuid; print(uuid.uuid4())'; fi
+}
 
 # Nombre de curso único por corrida: así el escenario se puede repetir sin chocar con
 # la regla "mismo alumno + curso + fecha ya pedido".
@@ -178,7 +191,7 @@ login() {
 post_batch_raw() {
   http POST /batches -H "Authorization: Bearer $1" -H "Idempotency-Key: $5" \
     --form-string "course_name=$2" --form-string "completion_date=$3" \
-    -F "file=@$4;type=text/csv"
+    -F "file=@$(native_path "$4");type=text/csv"
 }
 
 # post_batch <token> <curso> <fecha> <csv> <key> -> batch_id (acepta 201 nuevo o 200 repetido)
@@ -207,12 +220,12 @@ download_pdf() {
 }
 
 # verify_file <cert_id> <archivo>: POST público de verificación; deja HTTP_CODE/HTTP_BODY.
-verify_file() { http POST "/verify/$1/file" -F "file=@$2;type=application/pdf"; }
+verify_file() { http POST "/verify/$1/file" -F "file=@$(native_path "$2");type=application/pdf"; }
 
-# require_verify: PENDIENTE mientras la verificación responda 501 (no implementada).
+# require_verify: un id desconocido debe consultar el registro y devolver 404.
 require_verify() {
   http GET "/verify/$(new_key)"
-  [[ "$HTTP_CODE" != 501 ]] || pending "la verificación pública todavía responde 501 (frentes B y C)"
+  assert_eq 404 "$HTTP_CODE" "registro de verificación disponible"
 }
 
 # ---------- base de datos ----------

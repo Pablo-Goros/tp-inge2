@@ -1,0 +1,32 @@
+Validación observada el 16/11/2026 en frente-c
+Código de emisión: commit 758f710
+Entorno: Windows, Python 3.13, Docker Desktop Linux
+
+Desde backend:
+  ../.venv/Scripts/python.exe -m pytest -q
+
+234 passed, 1 warning in 169.09s (0:02:49)
+Advertencia heredada: StarletteDeprecationWarning por el cliente httpx de FastAPI/Starlette.
+
+Validación adicional de la nota alterada dentro del PDF:
+  ../.venv/Scripts/python.exe -m pytest -q tests/test_issuance_api.py
+3 passed, 1 warning in 8.90s
+La nota del contenido PDF se cambió de 9.75 a 8.75 con pypdf;
+el documento modificado conservó formato PDF legible y la API devolvió ALTERED.
+
+Incluye PostgreSQL y RabbitMQ reales del Compose aislado:
+- aceptación HTTP, migraciones, permisos, seed y publicador de B;
+- registro idempotente y conflicto sin sobrescritura;
+- diploma con/sin nota, nota cero, textos largos, acentos y QR;
+- reentrega sin regenerar bytes y reconciliación tras la última escritura;
+- ACK después de ISSUED persistido;
+- reintento con TTL y traslado a DLQ confirmado;
+- DLQ sin ruta y recuperación sin reemisión;
+- dos procesos reales interrumpidos, después del PDF y del registro;
+- lotes de 20 completos después de reiniciar;
+- recuperación del worker después de detener/reiniciar el broker;
+- recorrido HTTP -> outbox -> RabbitMQ -> worker -> descarga -> verificación real.
+
+Muestra visual renderizada y QR decodificado desde la página completa:
+http://localhost:8080/verify/d07b5314-7b5a-4c1f-a170-624dbe685606
+Es una muestra sintética no registrada, no una emisión de demo verificable.

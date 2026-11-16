@@ -409,6 +409,7 @@
           "verify"
         ],
         "summary": "Verify",
+        "description": "Return registered public academic data; never expose account data or grades.",
         "operationId": "verify_api_verify__cert_id__get",
         "parameters": [
           {
@@ -429,16 +430,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VerifyResponse"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Aún no implementado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -512,16 +503,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VerifyFileResponse"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Aún no implementado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
                 }
               }
             }
@@ -700,6 +681,17 @@
             "type": "integer",
             "title": "Attempts"
           },
+          "final_grade": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Grade"
+          },
           "last_error": {
             "anyOf": [
               {
@@ -785,12 +777,14 @@
             "type": "string",
             "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
             "format": "date",
-            "title": "Completion Date"
+            "title": "Completion Date",
+            "description": "Fecha YYYY-MM-DD no futura (dia de Buenos Aires)"
           },
           "file": {
             "type": "string",
             "contentMediaType": "application/octet-stream",
-            "title": "File"
+            "title": "File",
+            "description": "CSV UTF-8/BOM, email y final_grade opcional (0-10, hasta dos decimales), 1-100 filas, hasta 1.048.576 bytes; sin filas vacias intermedias"
           }
         },
         "type": "object",
@@ -806,7 +800,8 @@
           "file": {
             "type": "string",
             "contentMediaType": "application/octet-stream",
-            "title": "File"
+            "title": "File",
+            "description": "Archivo de hasta 5.242.880 bytes; la autenticidad se compara con el registro, sin depender del MIME declarado"
           }
         },
         "type": "object",

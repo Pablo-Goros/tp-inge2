@@ -1,7 +1,21 @@
-# 2026-11-15T02:51:02Z · commit ce3efd1 · http://localhost:8080
+# 2026-11-16T05:11:26Z · commit 01f2081 · http://localhost:8080
 == Escenario 01-lote-20
 -- 1. Subir lote-20.csv
    ok    HTTP = 201
-   (aceptado en 42 ms, sin esperar la emisión)
-   PENDIENTE: requiere el worker real (frente C); hoy compose.yaml usa un placeholder
-== PENDIENTE 01-lote-20
+   (aceptado en 1922 ms, sin esperar la emisión)
+-- 2. Esperar a que el lote termine
+   ok    estado del lote = COMPLETED
+   (terminado 8642 ms después del POST; sondeo cada 2 s)
+-- 3. 20 certificados distintos, todos registrados con la misma huella
+   ok    solicitudes ISSUED = 20
+   ok    certificados = 20
+   ok    huellas distintas = 20
+   ok    entradas de registry = 20
+   ok    huellas que difieren entre certificates y registry = 0
+-- 4. Descargar un PDF y verificarlo
+   ok    HTTP de la descarga = 200
+   ok    el archivo es un PDF = %PDF
+   ok    registro de verificación disponible = 404
+   ok    HTTP de la verificación = 200
+   ok    resultado = VALID
+== PASS 01-lote-20
