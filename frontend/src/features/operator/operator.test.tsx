@@ -73,7 +73,7 @@ describe('lista de lotes', () => {
 });
 
 describe('describeIssue / fechas', () => {
-  it('textos en español de los 4 motivos', () => {
+  it('textos en español de los motivos de fila y de archivo', () => {
     expect(describeIssue('NO_ACCOUNT')).toBe('No existe una cuenta de alumno con este email');
     expect(describeIssue('DUPLICATE_IN_FILE')).toBe('Email repetido en el archivo');
     expect(describeIssue('ALREADY_REQUESTED')).toBe('Ya existe un certificado para este alumno, curso y fecha');
@@ -81,6 +81,7 @@ describe('describeIssue / fechas', () => {
     expect(describeIssue('INVALID_GRADE')).toBe('Nota final inválida (0-10, hasta dos decimales)');
     expect(describeIssue('UNKNOWN_COLUMN')).toBe('Columna no reconocida (solo email y final_grade)');
     expect(describeIssue('OTRO')).toBe('Problema en la fila');
+    expect(describeIssue('OTRO', 0)).toBe('Problema en el archivo');
   });
   it('dd/mm/aaaa → YYYY-MM-DD, rechaza fechas inexistentes', () => {
     expect(parseDisplayDate('30/10/2026')).toBe('2026-10-30');

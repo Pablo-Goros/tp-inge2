@@ -24,6 +24,6 @@ const FILE_TEXTS: Record<CsvFileReason, string> = {
 };
 
 /** Motivo del contrato → texto en español. Un motivo desconocido no rompe la pantalla. */
-export function describeIssue(reason: CsvIssueReason | string): string {
-  return TEXTS[reason as CsvIssueReason] ?? FILE_TEXTS[reason as CsvFileReason] ?? 'Problema en la fila';
+export function describeIssue(reason: CsvIssueReason | string, row?: number): string {
+  return TEXTS[reason as CsvIssueReason] ?? FILE_TEXTS[reason as CsvFileReason] ?? (row === 0 ? 'Problema en el archivo' : 'Problema en la fila');
 }

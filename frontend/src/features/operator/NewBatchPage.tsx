@@ -81,7 +81,7 @@ export function NewBatchPage() {
       if (e instanceof ApiError && e.code === 'VALIDATION_ERROR' && e.csvIssues.length > 0) {
         setPhase({ s: 'rejected', issues: e.csvIssues });
       } else if (e instanceof ApiError && e.code === 'VALIDATION_ERROR' && e.csvFileIssues.length > 0) {
-        setPhase({ s: 'fileError', message: describeIssue(e.csvFileIssues[0].reason) }); // row 0: error del archivo, no de filas
+        setPhase({ s: 'fileError', message: describeIssue(e.csvFileIssues[0].reason, 0) }); // row 0: error del archivo, no de filas
       } else if (e instanceof ApiError && e.code === 'VALIDATION_ERROR') {
         setPhase({ s: 'error', message: e.message });
       } else if (e instanceof ApiError && e.code === 'IDEMPOTENCY_CONFLICT') {
