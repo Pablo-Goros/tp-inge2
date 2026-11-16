@@ -1,0 +1,143 @@
+17:11:53
+certs-web-1 3.328MiB / 3.766GiB 0.00%
+certs-worker-1 60.09MiB / 3.766GiB 54.17%
+certs-api-1 65.55MiB / 3.766GiB 0.10%
+certs-publisher-1 51.99MiB / 3.766GiB 1.94%
+certs-rabbitmq-1 90.69MiB / 3.766GiB 2.27%
+certs-postgres-1 29.34MiB / 3.766GiB 7.04%
+host usado_MB=1020 total_MB=3856
+---
+17:11:58
+certs-web-1 3.109MiB / 3.766GiB 0.00%
+certs-api-1 65.7MiB / 3.766GiB 0.12%
+certs-publisher-1 52.09MiB / 3.766GiB 0.21%
+certs-rabbitmq-1 90.46MiB / 3.766GiB 0.14%
+certs-postgres-1 32.29MiB / 3.766GiB 25.36%
+certs-worker-1 55.31MiB / 3.766GiB 96.81%
+host usado_MB=1033 total_MB=3856
+---
+17:12:06
+certs-web-1 3.109MiB / 3.766GiB 0.00%
+certs-api-1 65.7MiB / 3.766GiB 0.10%
+certs-publisher-1 52.09MiB / 3.766GiB 0.18%
+certs-rabbitmq-1 90.28MiB / 3.766GiB 0.14%
+certs-postgres-1 30.01MiB / 3.766GiB 5.37%
+host usado_MB=945 total_MB=3856
+---
+17:12:11
+certs-web-1 3.113MiB / 3.766GiB 0.05%
+certs-api-1 65.7MiB / 3.766GiB 0.84%
+certs-publisher-1 52.09MiB / 3.766GiB 0.20%
+certs-rabbitmq-1 90.24MiB / 3.766GiB 0.14%
+certs-postgres-1 30.16MiB / 3.766GiB 3.38%
+certs-worker-1 59.96MiB / 3.766GiB 82.33%
+host usado_MB=1010 total_MB=3856
+---
+17:12:17
+certs-web-1 3.113MiB / 3.766GiB 0.00%
+certs-worker-1 59.69MiB / 3.766GiB 0.06%
+certs-api-1 65.7MiB / 3.766GiB 0.13%
+certs-publisher-1 52.09MiB / 3.766GiB 0.17%
+certs-rabbitmq-1 90.6MiB / 3.766GiB 1.50%
+certs-postgres-1 32.36MiB / 3.766GiB 5.40%
+certs-init-1 53.73MiB / 3.766GiB 98.23%
+host usado_MB=1108 total_MB=3856
+---
+17:12:22
+certs-web-1 3.113MiB / 3.766GiB 0.00%
+certs-worker-1 60.34MiB / 3.766GiB 0.30%
+certs-api-1 65.75MiB / 3.766GiB 0.10%
+certs-publisher-1 52.53MiB / 3.766GiB 0.00%
+certs-postgres-1 32.64MiB / 3.766GiB 0.04%
+host usado_MB=951 total_MB=3856
+---
+17:12:27
+certs-web-1 3.113MiB / 3.766GiB 0.00%
+certs-worker-1 59.99MiB / 3.766GiB 0.00%
+certs-api-1 65.75MiB / 3.766GiB 0.15%
+certs-publisher-1 52.43MiB / 3.766GiB 0.00%
+certs-rabbitmq-1 98.82MiB / 3.766GiB 116.61%
+certs-postgres-1 32.65MiB / 3.766GiB 0.82%
+host usado_MB=1033 total_MB=3856
+---
+17:12:33
+certs-web-1 3.113MiB / 3.766GiB 0.00%
+certs-worker-1 59.99MiB / 3.766GiB 0.00%
+certs-api-1 65.75MiB / 3.766GiB 0.12%
+certs-publisher-1 52.18MiB / 3.766GiB 0.00%
+certs-rabbitmq-1 107.7MiB / 3.766GiB 0.18%
+certs-postgres-1 32.73MiB / 3.766GiB 11.07%
+host usado_MB=1074 total_MB=3856
+---
+17:12:38
+certs-web-1 3.117MiB / 3.766GiB 0.00%
+certs-worker-1 60.3MiB / 3.766GiB 0.06%
+certs-api-1 65.75MiB / 3.766GiB 0.09%
+certs-publisher-1 52.51MiB / 3.766GiB 0.17%
+certs-rabbitmq-1 88.89MiB / 3.766GiB 0.20%
+certs-postgres-1 33.32MiB / 3.766GiB 4.17%
+host usado_MB=1041 total_MB=3856
+---
+17:12:43
+certs-web-1 3.367MiB / 3.766GiB 0.02%
+certs-api-1 66MiB / 3.766GiB 0.30%
+certs-publisher-1 52.26MiB / 3.766GiB 0.20%
+certs-rabbitmq-1 87.87MiB / 3.766GiB 67.39%
+certs-postgres-1 33.16MiB / 3.766GiB 6.25%
+certs-worker-1 59.8MiB / 3.766GiB 92.16%
+host usado_MB=1052 total_MB=3856
+---
+17:12:49
+certs-worker-1 59.98MiB / 3.766GiB 1.26%
+certs-web-1 3.117MiB / 3.766GiB 0.00%
+certs-api-1 74.71MiB / 3.766GiB 7.33%
+certs-publisher-1 52.28MiB / 3.766GiB 0.19%
+certs-rabbitmq-1 86.31MiB / 3.766GiB 42.18%
+certs-postgres-1 35.09MiB / 3.766GiB 5.29%
+host usado_MB=1036 total_MB=3856
+---
+17:12:54
+certs-web-1 3.117MiB / 3.766GiB 0.00%
+certs-api-1 65.77MiB / 3.766GiB 0.14%
+certs-publisher-1 52.28MiB / 3.766GiB 0.21%
+certs-rabbitmq-1 151MiB / 3.766GiB 98.69%
+certs-postgres-1 32.95MiB / 3.766GiB 6.69%
+host usado_MB=1001 total_MB=3856
+---
+17:12:59
+certs-worker-1 12.95MiB / 3.766GiB 11.86%
+certs-web-1 3.117MiB / 3.766GiB 0.05%
+certs-api-1 65.78MiB / 3.766GiB 0.72%
+certs-publisher-1 52.28MiB / 3.766GiB 0.21%
+certs-rabbitmq-1 109.1MiB / 3.766GiB 80.99%
+certs-postgres-1 35.44MiB / 3.766GiB 29.16%
+host usado_MB=995 total_MB=3856
+---
+17:13:05
+certs-worker-1 59.78MiB / 3.766GiB 5.63%
+certs-web-1 3.355MiB / 3.766GiB 0.07%
+certs-api-1 65.78MiB / 3.766GiB 0.09%
+certs-publisher-1 52.78MiB / 3.766GiB 0.19%
+certs-rabbitmq-1 83.07MiB / 3.766GiB 0.43%
+certs-postgres-1 35.54MiB / 3.766GiB 1.50%
+host usado_MB=1021 total_MB=3856
+---
+17:13:10
+certs-worker-1 59.48MiB / 3.766GiB 0.06%
+certs-web-1 3.602MiB / 3.766GiB 0.05%
+certs-api-1 65.78MiB / 3.766GiB 0.13%
+certs-publisher-1 52.29MiB / 3.766GiB 0.20%
+certs-rabbitmq-1 83.07MiB / 3.766GiB 0.63%
+certs-postgres-1 22.49MiB / 3.766GiB 5.79%
+host usado_MB=1033 total_MB=3856
+---
+17:13:15
+certs-worker-1 59.6MiB / 3.766GiB 0.07%
+certs-web-1 3.125MiB / 3.766GiB 0.00%
+certs-api-1 65.79MiB / 3.766GiB 2.23%
+certs-publisher-1 52.54MiB / 3.766GiB 0.21%
+certs-rabbitmq-1 83.57MiB / 3.766GiB 0.39%
+certs-postgres-1 26.04MiB / 3.766GiB 0.08%
+host usado_MB=1037 total_MB=3856
+---
+17:13:21

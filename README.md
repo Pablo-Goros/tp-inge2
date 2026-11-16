@@ -14,7 +14,7 @@ Entrega: **19/11/2026** · Defensa: **26/11/2026** · [Enunciado](docs/reference
 | Worker (PDF + QR + registro) | ⏳ Pendiente (frente C). En Compose hay un placeholder |
 | Verificación pública `/api/verify/...` | ⏳ Pendiente; hoy responde `501` |
 | Frontend | ⏳ Pendiente (frente A). En Compose hay un placeholder que ya reenvía `/api` |
-| Despliegue en la nube | ⏳ Pendiente |
+| Despliegue en la nube | ✅ VM en Azure, 10/10 escenarios PASS allí ([detalle](docs/cloud-setup.md)) |
 
 ## Cómo funciona
 
@@ -156,7 +156,7 @@ Todas las variables, con su explicación, están en [.env.example](.env.example)
 
 ## Despliegue en la nube
 
-⏳ Pendiente la VM. Se usa el mismo `compose.yaml` en una VM Linux (Ubuntu), con el puerto 8080 abierto. Desde una máquina con el repositorio:
+Desplegado en una VM de Azure (Ubuntu 24.04, 2 vCPU, 4 GiB) con el mismo `compose.yaml`; solo el puerto 8080 está abierto para la app. Proveedor, red, resultados y baja en [docs/cloud-setup.md](docs/cloud-setup.md). Para desplegar o actualizar, desde una máquina con el repositorio:
 
 ```bash
 scripts/deploy.sh <usuario@ip> [clave-ssh.pem]

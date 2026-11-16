@@ -1,0 +1,23 @@
+# VM Azure (Standard_B2als_v2: 2 vCPU, 3856 MB) · 16/11/2026 · código desplegado: frente-c @ 9f9f692
+# Escenarios corridos DENTRO de la VM con scripts/run-all.sh; muestras de docker stats cada 3 s
+# en memoria-vm-muestras.txt (143 líneas).
+
+== Resultado de los escenarios en la VM
+10 de 10 PASS (ver RESUMEN.txt y los .log de esta carpeta)
+
+== Memoria durante la corrida completa de escenarios
+Pico del host: 1108 MB de 3856 MB (29 %). Límite del plan: 80 %.
+Pico por contenedor (MiB):
+  api        75
+  init       54   (tarea de una sola vez)
+  postgres   36
+  publisher  53
+  rabbitmq  151
+  web         4
+  worker     60
+
+== Reinicio de la VM (sudo reboot)
+Antes:   8 lotes, 123 certificados
+La VM volvió a aceptar SSH a los ~25 s; la API respondió HTTP 401 desde Internet (puerto 8080).
+Todos los servicios volvieron solos (restart: unless-stopped); init se reejecutó y terminó con código 0.
+Después: 8 lotes, 123 certificados (sin pérdida de datos: volúmenes pgdata y rabbitmqdata).

@@ -1,0 +1,12 @@
+# 2026-11-16T17:11:53Z · commit ? · http://localhost:8080
+ESCENARIO                  RESULTADO  DURACION
+01-lote-20                 PASS       4s
+02-worker-caido            PASS       23s
+03-broker-caido            PASS       17s
+04-mensaje-repetido        PASS       5s
+05-transitorio             PASS       12s
+06-permanente              PASS       8s
+07-csv-invalido            PASS       2s
+08-verificacion            PASS       8s
+09-alumno-permisos         PASS       3s
+10-segundo-up              PASS       8s
