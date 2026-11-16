@@ -35,7 +35,7 @@ export function MyCertificatesPage() {
       <div className="vf-head">
         <h1 className="disp page-title">Mis certificados</h1>
         <p className="help">Certificados emitidos a tu cuenta. Cada PDF incluye un QR para verificarlo.</p>
-        <p className="help">ElegÌ cu·les <Link className="lnk-draw" to="/profile/edit#certificates">destacar en tu perfil</Link>.</p>
+        <p className="help">Eleg√≠ cu√°les <Link className="lnk-draw" to="/profile/edit#certificates">destacar en tu perfil</Link>.</p>
       </div>
       {load.s === 'loading' && <SkeletonList label="Cargando certificados‚Ä¶" rows={2} height={110} />}
       {load.s === 'error' && (

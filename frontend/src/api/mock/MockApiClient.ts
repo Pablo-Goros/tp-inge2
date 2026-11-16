@@ -34,6 +34,10 @@ const uuid = () =>
 /** certificate_id determinista: los primeros 24 caracteres del lote + nº de alumno en 12 dígitos. */
 const certId = (b: MockBatch, student: number) => b.id.slice(0, 24) + String(student).padStart(12, '0');
 
+/** tx_hash simulado y determinista (0x + 64 hex) derivado del certificate_id. */
+const mockTxHash = (id: string) =>
+  '0x' + Array.from({ length: 32 }, (_, i) => ((id.charCodeAt(i % id.length) * 31 + i * 7) & 0xff).toString(16).padStart(2, '0')).join('');
+
 /** Email de una credencial `mock-google:<email>`; '' si no tiene ese formato. */
 const mockGoogleEmail = (c: string) => (c.startsWith('mock-google:') ? c.slice('mock-google:'.length).trim().toLowerCase() : '');
 
@@ -80,7 +84,7 @@ export function createMockClient(opts: MockOptions = {}): ApiClient {
       const base = { certificate_id: certId(b, n), student_name: studentName(n), student_email: studentEmail(n), final_grade: b.grades?.[i] ?? null };
       if (b.failed.includes(i)) return { ...base, status: 'FAILED', attempts: 3, last_error: 'No se pudo generar el PDF.' };
       const rank = k++;
-      if (rank < issued) return { ...base, status: 'ISSUED', attempts: 1, last_error: null };
+      if (rank < issued) return { ...base, status: 'ISSUED', attempts: 1, last_error: null, tx_hash: mockTxHash(base.certificate_id) };
       if (rank === issued) return { ...base, status: 'PROCESSING', attempts: 1, last_error: null };
       if (rank === issued + 1) return { ...base, status: 'PENDING', attempts: 1, last_error: null }; // reintento
       return { ...base, status: 'PENDING', attempts: 0, last_error: null };

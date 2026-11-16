@@ -41,6 +41,8 @@ export interface BatchItem {
   last_error: string | null;
   /** Nota final 0-10 (backend: BatchItem.final_grade); null o ausente si no se cargó. */
   final_grade?: number | null;
+  /** Hash de la transacción simulada de emisión (solo ISSUED). TODO(equipo): el backend aún no lo expone. */
+  tx_hash?: string | null;
 }
 
 export interface BatchDetail {

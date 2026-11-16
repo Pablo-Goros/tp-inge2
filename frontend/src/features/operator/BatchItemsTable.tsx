@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { BatchItem } from '../../api';
+import { etherscanTxUrl } from '../../api/format';
 import { CertStatusBadge, Table } from '../../components/ui';
 
 export const MAX_ATTEMPTS = 3;
@@ -19,23 +20,27 @@ const gradeText = (i: BatchItem) => (i.final_grade == null ? '—' : i.final_gra
 const showsAttemptsOfMax = (i: BatchItem) => i.status === 'FAILED' || i.status === 'PROCESSING' || isRetry(i);
 const attemptsText = (i: BatchItem) => (showsAttemptsOfMax(i) ? `${i.attempts}/${MAX_ATTEMPTS}` : String(i.attempts));
 
-function CopyId({ id }: { id: string }) {
+/** Copia el enlace de la transacción; si el item no trae `tx_hash`, cae al identificador del certificado. */
+function CopyId({ id, txHash }: { id: string; txHash?: string | null }) {
   const [copied, setCopied] = useState(false);
   const t = useRef<ReturnType<typeof setTimeout>>();
   useEffect(() => () => clearTimeout(t.current), []);
+  const shown = txHash ?? id;
+  const text = txHash ? etherscanTxUrl(txHash) : id;
   async function copy() {
-    try { await navigator.clipboard.writeText(id); setCopied(true); t.current = setTimeout(() => setCopied(false), 1500); } catch { /* sin portapapeles */ }
+    try { await navigator.clipboard.writeText(text); setCopied(true); t.current = setTimeout(() => setCopied(false), 1500); } catch { /* sin portapapeles */ }
   }
   return (
     <span className="op-id">
-      <code title={id}>{id.slice(-8)}</code>
-      <button type="button" className="op-copy" onClick={() => void copy()} aria-label={`Copiar identificador ${id}`}>{copied ? 'Copiado' : 'Copiar'}</button>
+      <code title={shown}>{shown.slice(-8)}</code>
+      <button type="button" className="op-copy" onClick={() => void copy()}
+        aria-label={txHash ? `Copiar enlace de la transacción ${txHash}` : `Copiar identificador ${id}`}>{copied ? 'Copiado' : 'Copiar'}</button>
     </span>
   );
 }
 
 function Detail({ item }: { item: BatchItem }) {
-  if (item.status === 'ISSUED') return <CopyId id={item.certificate_id} />;
+  if (item.status === 'ISSUED') return <CopyId id={item.certificate_id} txHash={item.tx_hash} />;
   if (item.last_error && (item.status === 'FAILED' || isRetry(item) || item.status === 'PROCESSING')) {
     return <span className={item.status === 'FAILED' ? 'op-fail' : 'op-warn'}>{item.last_error}</span>;
   }

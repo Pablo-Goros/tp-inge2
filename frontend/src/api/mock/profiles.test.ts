@@ -85,6 +85,15 @@ describe('perfiles del mock', () => {
     await expect(api.getPublicProfile('no-existe')).rejects.toMatchObject({ status: 404 });
   });
 
+  it('Agustín Roldán destaca 3 certificados que tiene emitidos', async () => {
+    saveSession({ token: 'mock:alumno02@demo.test', user: { name: 'Agustín Roldán', role: 'student' } });
+    const api = mk();
+    const featured = (await api.getPublicProfile('agustin-roldan')).certificatesFeatured;
+    expect(featured).toHaveLength(3);
+    const mine = (await api.listMyCertificates()).map((c) => c.certificate_id);
+    expect(mine).toEqual(expect.arrayContaining(featured));
+  });
+
   it('el perfil público no filtra email de cuenta ni contactEmail vacío', async () => {
     clearSession();
     const api = mk();

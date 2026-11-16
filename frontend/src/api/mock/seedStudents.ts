@@ -35,6 +35,8 @@ export const STUDENT_SEEDS: MockProfile[] = [
     headline: 'Desarrollador backend junior · Python, Django y APIs REST',
     about: 'Estudiante avanzado de Tecnicatura en Programación con dos años construyendo APIs para pequeños comercios. Me gusta el código claro, los tests y las migraciones que no rompen nada un viernes a la tarde. Quiero sumarme a un equipo donde pueda aprender de gente con más experiencia.',
     openTo: ['Empleo', 'Prácticas'], availability: 'Part-time desde diciembre',
+    // Alumno 2 en los lotes: Programación Segura en Python, Bases de Datos Distribuidas, Redes y Seguridad I.
+    certificatesFeatured: ['e4d25b80-1c9a-4f73-8e06-000000000002', '5e0d17a9-3b62-4c8f-a4d1-000000000002', 'c2b84e10-9a37-4f52-8d6b-000000000002'],
     links: links([['github', 'GitHub', 'https://github.com/agus-roldan-demo'], ['linkedin', 'LinkedIn', 'https://www.linkedin.com/in/agustin-roldan-demo']]),
     experience: exp([
       ['Desarrollador backend freelance', 'Independiente', '2024-06', null, 'APIs y paneles de administración para tres comercios locales.', ['Reduje 40% el tiempo de carga de un catálogo con 8.000 productos', 'Despliegues con Docker y GitHub Actions'], 'Remoto'],

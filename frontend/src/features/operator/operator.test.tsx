@@ -320,6 +320,19 @@ describe('detalle de lote', () => {
     expect(cells).toEqual(['9.50', '—']);
   });
 
+  it('copiar en un certificado emitido copia el enlace de la transacción; sin tx_hash copia el identificador', async () => {
+    const write = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText: write }, configurable: true });
+    const tx = '0x' + 'ab'.repeat(32);
+    const items = [item(1, 'ISSUED', { attempts: 1, tx_hash: tx }), item(2, 'ISSUED', { attempts: 1 })];
+    renderAt(fake({ getBatch: vi.fn(async () => detail(items)) }), '/operator/batches/7f3a-bbbb');
+    await screen.findByRole('table');
+    await userEvent.click(screen.getAllByRole('button', { name: `Copiar enlace de la transacción ${tx}` })[0]);
+    expect(write).toHaveBeenLastCalledWith(`https://etherscan.io/tx/${tx}`);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Copiar identificador cert-2-aaaaaaaaaaaa' })[0]);
+    expect(write).toHaveBeenLastCalledWith('cert-2-aaaaaaaaaaaa');
+  });
+
   it('sin created_at no muestra "creado"', async () => {
     renderAt(fake({ getBatch: vi.fn(async () => detail(MIXED)) }), '/operator/batches/7f3a-bbbb');
     expect(await screen.findByText('Lote #7F3A… · finalización 30/10/2026')).toBeInTheDocument();
