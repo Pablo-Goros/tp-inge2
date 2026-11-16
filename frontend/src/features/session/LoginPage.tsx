@@ -3,8 +3,11 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ApiError, isMockApi } from '../../api';
 import { Alert, Button, Field } from '../../components/ui';
 import { homeFor, useAuth } from './AuthProvider';
+import { GoogleButton } from './GoogleButton';
 
 const BAD_CREDS = 'Email o contraseña incorrectos. Revisá los datos e intentá de nuevo.';
+
+const GOOGLE_UNAVAILABLE = 'No pudimos cargar el acceso con Google. Podés ingresar con email y contraseña.';
 
 function messageFor(e: unknown): string {
   if (e instanceof ApiError && e.code === 'UNAUTHENTICATED') return BAD_CREDS;
@@ -13,7 +16,8 @@ function messageFor(e: unknown): string {
 }
 
 export function LoginPage() {
-  const { user, login } = useAuth();
+  const { user, login, loginWithGoogle } = useAuth();
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const navigate = useNavigate();
   const expired = (useLocation().state as { expired?: boolean } | null)?.expired;
   const [email, setEmail] = useState('');
@@ -30,6 +34,19 @@ export function LoginPage() {
     setLoading(true);
     try {
       const u = await login(email, password);
+      navigate(homeFor(u.role), { replace: true });
+    } catch (e) {
+      setError(messageFor(e));
+      setLoading(false);
+    }
+  }
+
+  async function onGoogle(credential: string) {
+    if (loading) return;
+    setError(null);
+    setLoading(true);
+    try {
+      const u = await loginWithGoogle(credential);
       navigate(homeFor(u.role), { replace: true });
     } catch (e) {
       setError(messageFor(e));
@@ -63,6 +80,12 @@ export function LoginPage() {
           <Field label="Contraseña" type="password" name="password" autoComplete="current-password" placeholder="••••••••"
             value={password} onChange={(e) => setPassword(e.target.value)} readOnly={loading} aria-invalid={invalid || undefined} required />
           <Button type="submit" block loading={loading} loadingLabel="Ingresando…">Ingresar</Button>
+          {googleClientId && (
+            <>
+              <div className="login-sep" aria-hidden="true">o</div>
+              <GoogleButton clientId={googleClientId} onCredential={onGoogle} onError={() => setError(GOOGLE_UNAVAILABLE)} />
+            </>
+          )}
           <div className="login-foot">
             <Link className="lnk" to="/verify">Verificar un certificado →</Link>
             <span className="help">No hace falta cuenta para verificar.</span>

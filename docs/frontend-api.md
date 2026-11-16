@@ -11,6 +11,7 @@ Con `VITE_API=http` el backend debe estar arriba con `docker compose up -d --bui
 | Método y ruta | Rol | Método del cliente | Notas |
 | --- | --- | --- | --- |
 | `POST /api/auth/login` | público | `login` | 401 = credenciales inválidas |
+| `POST /api/auth/google` | público | `loginWithGoogle` | body con el ID token de Google (`credential`); misma respuesta que login; 401 si el token es inválido o el email no corresponde a un usuario. Ver `frontend/README.md` ("Ingresar con Google") |
 | `POST /api/batches` (multipart + `Idempotency-Key`) | operator | `createBatch` | 400 con `details`: filas (`row` >= 1, `email`, `reason`: `INVALID_EMAIL`, `NO_ACCOUNT`, `DUPLICATE_IN_FILE`, `ALREADY_REQUESTED`, `EMPTY_ROW`, `INVALID_FIELD_COUNT`, `INVALID_GRADE`) o error de archivo (`{row: 0, reason}`: `EMPTY_FILE`, `INVALID_ENCODING`, `MALFORMED_CSV`, `MISSING_EMAIL_COLUMN`, `DUPLICATE_COLUMN`, `UNKNOWN_COLUMN`, `NO_DATA_ROWS`, `TOO_MANY_ROWS`, `FILE_TOO_LARGE`); fecha futura (hoy en America/Argentina/Buenos_Aires) y `course_name` > 200 también dan 400; 409 si la clave se reusa con otro contenido |
 | `GET /api/batches` | operator | `listBatches` | sin paginación; filtros y orden en el cliente |
 | `GET /api/batches/{id}` | operator | `getBatch` | se consulta cada 2 s mientras `IN_PROGRESS`; cada ítem trae `final_grade` (número 0-10 o `null`), que se muestra en la columna «Nota» |

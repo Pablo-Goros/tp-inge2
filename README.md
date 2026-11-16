@@ -161,6 +161,7 @@ Todas las variables, con su explicación, están en [.env.example](.env.example)
 | `JWT_SECRET` | Firma de los tokens. Obligatoria, mínimo 32 bytes. **Cambiar en la nube** |
 | `DEMO_PASSWORD` | Contraseña de los usuarios de demo |
 | `PUBLIC_BASE_URL` | URL que va dentro del QR. **Fijarla antes de emitir certificados**: los PDF anteriores conservan su enlace original aunque la huella siga siendo válida |
+| `GOOGLE_CLIENT_ID` | Opcional: habilita "Ingresar con Google" (mismo valor que `VITE_GOOGLE_CLIENT_ID` del frontend; ver [frontend/README.md](frontend/README.md)) |
 | `FAULT_INJECTION` | Fallas controladas para la demo: `transient:2`, `permanent:alumno03@demo.test` |
 
 ## Despliegue en la nube
