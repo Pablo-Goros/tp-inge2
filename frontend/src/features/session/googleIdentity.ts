@@ -18,7 +18,7 @@ export function loadGis(): Promise<GoogleAccounts> {
   pending ??= new Promise<GoogleAccounts>((resolve, reject) => {
     const s = document.createElement('script');
     s.src = SRC; s.async = true; s.defer = true;
-    s.onload = () => (window.google?.accounts ? resolve(window.google) : (pending = null, reject(new Error('GIS sin accounts'))));
+    s.onload = () => (window.google?.accounts ? resolve(window.google) : (pending = null, s.remove(), reject(new Error('GIS sin accounts'))));
     s.onerror = () => { pending = null; s.remove(); reject(new Error('No se pudo cargar GIS')); };
     document.head.appendChild(s);
   });
