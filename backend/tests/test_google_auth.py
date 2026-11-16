@@ -98,7 +98,7 @@ def test_google_login_wrong_issuer_401():
 
 def test_google_login_expired_401():
     with pytest.raises(google_auth.InvalidGoogleToken):
-        google_auth.verify_google_id_token(make_token(exp=int(time.time()) - 10), CLIENT_ID)
+        google_auth.verify_google_id_token(make_token(exp=int(time.time()) - 60), CLIENT_ID)
 
 
 def test_google_login_missing_email_401():
@@ -138,3 +138,19 @@ def test_google_login_jwks_fetch_error_401(monkeypatch):
 def test_google_login_garbage_token_401():
     with pytest.raises(google_auth.InvalidGoogleToken):
         google_auth.verify_google_id_token("basura", CLIENT_ID)
+
+
+@pytest.mark.parametrize("exc", [ValueError("json"), OSError("socket")])
+def test_google_login_non_jwt_error_from_key_fetch_is_invalid_token(monkeypatch, exc):
+    def boom(token):
+        raise exc
+
+    monkeypatch.setattr(google_auth, "_signing_key", boom)
+    with pytest.raises(google_auth.InvalidGoogleToken):
+        google_auth.verify_google_id_token(make_token(), CLIENT_ID)
+
+
+def test_verify_accepts_iat_slightly_in_future():
+    token = make_token(iat=int(time.time()) + 10)
+    assert google_auth.verify_google_id_token(token, CLIENT_ID) == "op@itba.test"
+

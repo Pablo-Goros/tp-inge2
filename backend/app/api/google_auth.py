@@ -13,7 +13,7 @@ class InvalidGoogleToken(Exception):
 
 @lru_cache
 def _jwks_client() -> jwt.PyJWKClient:
-    return jwt.PyJWKClient(GOOGLE_JWKS_URL)
+    return jwt.PyJWKClient(GOOGLE_JWKS_URL, timeout=5)
 
 
 def _signing_key(token: str):
@@ -25,16 +25,20 @@ def verify_google_id_token(credential: str, client_id: str) -> str:
     if not client_id:
         raise InvalidGoogleToken("GOOGLE_CLIENT_ID no configurado")
     try:
+        key = _signing_key(credential)
         claims = jwt.decode(
             credential,
-            _signing_key(credential),
+            key,
             algorithms=["RS256"],
             audience=client_id,
             issuer=GOOGLE_ISSUERS,
+            leeway=30,
             options={"require": ["exp", "iss", "aud", "email"]},
         )
     except jwt.PyJWTError as e:
         raise InvalidGoogleToken(str(e)) from None
+    except Exception as e:  # red/JSON/IncompleteRead al traer JWKS: nunca 500
+        raise InvalidGoogleToken(f"verificación fallida: {type(e).__name__}") from None
     email = claims["email"]
     if claims.get("email_verified") is not True or not isinstance(email, str):
         raise InvalidGoogleToken("email no verificado")
