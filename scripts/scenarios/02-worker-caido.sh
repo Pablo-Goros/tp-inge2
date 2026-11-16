@@ -9,13 +9,39 @@ TOKEN=$(login "$OPERATOR_EMAIL" "$DEMO_PASSWORD")
 require_worker
 wait_all_idle 120
 
-step "1. Subir lote-20.csv"
+step "1. Detener worker y subir lote-20.csv"
+stop_service worker
 BATCH=$(post_batch "$TOKEN" "$(unique_course 02)" 2026-10-30 sample-data/lote-20.csv "$(new_key)")
 echo "   lote $BATCH"
 
-step "2. Apenas se emite el primero, matar el worker"
+# Hold all requests except the first in publisher order. The worker finishes
+# one, then blocks on the next DB row with an unacknowledged delivery. This
+# makes the crash reproducible even when all 20 PDFs would take under a second.
+first=$(sql "SELECT o.request_id FROM outbox o JOIN cert_requests r ON r.id=o.request_id
+             WHERE r.batch_id='$BATCH' ORDER BY o.created_at, o.id LIMIT 1")
+lock_app="scenario02-$BATCH"
+docker compose exec -T postgres psql -U "${POSTGRES_USER:-certs}" -d "${POSTGRES_DB:-certs}" \
+  -v ON_ERROR_STOP=1 -c "SET application_name='$lock_app'; BEGIN;
+  SELECT id FROM cert_requests WHERE batch_id='$BATCH' AND id<>'$first' FOR UPDATE;
+  SELECT pg_sleep(120);" >"$WORKDIR/checkpoint.log" 2>&1 &
+lock_pid=$!
+release_checkpoint() {
+  sql "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE application_name='$lock_app'" >/dev/null 2>&1 || true
+  wait "$lock_pid" 2>/dev/null || true
+}
+cleanup_checkpoint() { local result=$?; release_checkpoint; _scenario_end "$result"; }
+trap cleanup_checkpoint EXIT
+deadline=$((SECONDS + 20))
+until [[ "$(sql "SELECT count(*) FROM pg_stat_activity WHERE application_name='$lock_app' AND wait_event='PgSleep'")" == 1 ]]; do
+  [[ $SECONDS -lt $deadline ]] || fail "no se alcanzó la barrera de base de datos"
+  sleep 0.2
+done
+start_service worker
+
+step "2. Tras emitir el primero, matar el worker con el lote incompleto"
 wait_issued_at_least "$BATCH" 1 60
 stop_service worker kill
+release_checkpoint
 at_crash=$(count_status "$BATCH" ISSUED)
 echo "   emitidos al momento de la caída: $at_crash / 20"
 [[ "$at_crash" -lt 20 ]] || fail "el lote terminó antes de matar el worker; el escenario no probaría nada"
