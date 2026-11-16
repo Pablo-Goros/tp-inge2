@@ -1,0 +1,22 @@
+# 2026-11-16T17:13:12Z · commit ? · http://localhost:8080
+== Escenario 09-alumno-permisos
+-- 1. Sin token no se accede a nada privado
+   ok    GET /me/certificates sin token = 401
+-- 2. El alumno no puede hacer acciones de operador
+   ok    GET /batches = 403
+   ok    GET /batches/{id} = 403
+   ok    POST /batches = 403
+   ok    estado del lote = COMPLETED
+-- 3. «Mis certificados» lista exactamente los suyos
+   ok    HTTP = 200
+   ok    lista igual a sus certificados emitidos (8 en total)
+   ok    certificados ajenos en la lista = 0
+-- 4. Descarga su PDF, pero no el de otro alumno
+   ok    PDF propio = 200
+   ok    PDF de otro alumno = 404
+-- 5. La consulta pública muestra solo datos académicos
+   ok    registro de verificación disponible = 404
+   ok    HTTP = 200
+   ok    campos no acordados en la respuesta = <vacío>
+   ok    emails en la respuesta = 0
+== PASS 09-alumno-permisos

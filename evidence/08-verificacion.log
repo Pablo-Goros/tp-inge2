@@ -1,0 +1,36 @@
+# 2026-11-16T05:15:17Z · commit 01f2081 · http://localhost:8080
+== Escenario 08-verificacion
+   ok    registro de verificación disponible = 404
+-- 1. Emitir un certificado y descargarlo
+   ok    estado del lote = COMPLETED
+   ok    HTTP de la descarga = 200
+-- 2. Consulta pública por id (lo que abre el QR)
+{
+  "status": "REGISTERED",
+  "certificate_id": "8c9c0dbd-8e77-45fa-8b1e-df81b47fe90c",
+  "student_name": "Alumno 01",
+  "institution": "Instituto Demo",
+  "course_name": "Escenario 08 1794806120-13145",
+  "completion_date": "2026-10-30"
+}
+   ok    HTTP = 200
+   ok    status = REGISTERED
+   ok    certificate_id = 8c9c0dbd-8e77-45fa-8b1e-df81b47fe90c
+   ok    emails en la respuesta pública = 0
+-- 3. Subir el PDF original
+   ok    resultado = VALID
+-- 4. Subir el mismo PDF con un solo byte cambiado
+   ok    resultado = ALTERED
+-- 5. Identificador inexistente
+   ok    HTTP de la consulta = 404
+   ok    status = NOT_FOUND
+   ok    resultado al subir el PDF con otro id = NOT_FOUND
+-- 6. Registro no disponible (postgres detenido): 503, no 'inválido'
+   ok    postgres corriendo = false
+   ok    HTTP de la consulta = 503
+   ok    error.code = UNAVAILABLE
+   ok    HTTP al subir el PDF = 503
+-- 7. Al volver el registro, el original verifica de nuevo
+   ok    postgres arriba (healthy)
+   ok    resultado = VALID
+== PASS 08-verificacion

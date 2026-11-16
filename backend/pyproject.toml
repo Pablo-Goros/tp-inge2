@@ -14,10 +14,12 @@ dependencies = [
   "bcrypt==5.0.0",
   "pyjwt==2.15.1",
   "python-multipart==0.0.33",
+  "reportlab==5.1.0",
+  "qrcode[pil]==8.2",
 ]
 
 [project.optional-dependencies]
-test = ["pytest==9.2.0", "httpx==0.28.1"]
+test = ["pytest==9.2.0", "httpx==0.28.1", "pypdf==7.1.0"]
 
 [build-system]
 requires = ["setuptools>=68"]

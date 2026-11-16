@@ -1,6 +1,6 @@
 # Contratos entre frentes (Paso 0)
 
-Versión 1.1, 13/11/2026 (1.1: corrige el ruteo de reintento/DLQ en §4). **Aprobado** por el usuario el 13/11/2026; falta que los otros tres integrantes lo lean y confirmen. Es la fuente única para los frentes A (frontend), B (API/DB/publicación), C (worker/registro/verificación) y D (infra/documentos). Ver [división del trabajo](division-del-trabajo.md).
+Versión 1.3, 16/11/2026. Integra el contrato de B y la implementación de C acordada con su responsable: registro simulado, diploma horizontal y recuperación antes del ACK. No se atribuye aprobación a los otros frentes. Ver [spec B](specs/frente-b-api-publicacion/spec.md), [entrega C](specs/frente-c-emision/entrega.md) y [división del trabajo](division-del-trabajo.md).
 
 Las decisiones marcadas **[Decisión propuesta]** son supuestos de quien redactó el documento; no fueron confirmadas por el equipo. Revisarlas antes de aprobar.
 
@@ -44,7 +44,7 @@ docs/
 | `DEMO_PASSWORD` | Contraseña de las cuentas sembradas por `init` (valor de demo en `.env.example`; otra en cloud) |
 | `PUBLIC_BASE_URL` | Base de la URL del QR, p. ej. `http://localhost:8080`. **Fijar antes de emitir el lote de demo**: cambiarla altera el PDF |
 | `REGISTRY_BACKEND` | `simulated` (por defecto) o `chain` (tarea extra) |
-| `MAX_ATTEMPTS` | Reintentos por certificado, por defecto `3` |
+| `MAX_ATTEMPTS` | Intentos totales por certificado (incluido el primero), por defecto `3`, mínimo `1` |
 | `RETRY_DELAY_SECONDS` | Espera entre reintentos, por defecto `5`. Cambiarlo con el broker ya inicializado exige recrear la cola `cert.issue.wait` (RabbitMQ rechaza redeclarar con otro TTL) |
 | `POLL_INTERVAL_SECONDS` | Espera del publicador cuando no hay filas pendientes, por defecto `1.0` |
 | `INIT_TIMEOUT_SECONDS` | Plazo total de `init` para alcanzar PostgreSQL y RabbitMQ, por defecto `60` |
@@ -69,7 +69,7 @@ Propiedad: B define y migra; C lee y escribe solo `cert_requests` (estado), `cer
 | `institutions` | `id`, `name` | Una fila precargada |
 | `users` | `id`, `institution_id`, `email` (único, minúsculas), `name`, `password_hash`, `role` (`operator`/`student`) | Un operador y N alumnos precargados |
 | `batches` | `id`, `operator_id`, `course_name`, `completion_date` (date), `idempotency_key`, `request_fingerprint`, `created_at` | Único `(operator_id, idempotency_key)` |
-| `cert_requests` | `id` **= identificador del certificado**, `batch_id`, `student_id`, `course_key`, `completion_date`, `status`, `attempts` (int, 0), `last_error` (text, null), `created_at`, `updated_at` | Único `(student_id, course_key, completion_date)` |
+| `cert_requests` | `id` **= identificador del certificado**, `batch_id`, `student_id`, `course_key`, `completion_date`, `status`, `attempts` (int, 0), `last_error` (text, null), `final_grade` (numeric(4,2), null, CHECK 0-10), `created_at`, `updated_at` | Único `(student_id, course_key, completion_date)` |
 | `outbox` | `id`, `request_id`, `correlation_id` (uuid), `created_at`, `published_at` (null hasta confirmar) | Una fila por solicitud, creada en la misma transacción que el lote |
 | `certificates` | `request_id` (PK, FK), `pdf` (bytea), `sha256` (text), `issued_at` | Bytes definitivos; se escriben una sola vez |
 | `registry` | `cert_id` (PK), `sha256`, `registered_at` | Registro simulado, solo inserción (ver §7) |
@@ -119,13 +119,15 @@ PENDING ──(worker toma)──► PROCESSING ──(éxito)──► ISSUED
 
 **Algoritmo del worker (contrato de comportamiento, C lo implementa):**
 
-1. Leer la solicitud. Si `status` es `ISSUED` o `FAILED`: ACK y terminar (sin efectos).
+1. Leer la solicitud. Si es `ISSUED`: ACK sin efectos. Si es `FAILED`: no reemitir; publicar a DLQ con confirmación y después ACK, para recuperar una caída durante el traslado anterior.
 2. Marcar `PROCESSING`, incrementar `attempts`.
 3. Si ya existe `certificates` para el id, reutilizar esos bytes y hash; si no, generar PDF+QR **una sola vez** y guardar `pdf` y `sha256`.
 4. `registry.register(cert_id, sha256)` (idempotente, ver §7).
 5. Marcar `ISSUED` y hacer ACK. El ACK es siempre el último paso.
-6. Falla transitoria con `attempts < MAX_ATTEMPTS`: volver a `PENDING` y `nack(requeue=false)`; el dead-letter lo lleva a la cola de espera y de vuelta a la cola de trabajo. Falla permanente o intentos agotados: marcar `FAILED` con `last_error`, **publicar el mensaje a `certs` con clave `dlq` y luego hacer ACK** (un `nack` no podría distinguir destino: la cola de trabajo tiene un único dead-letter exchange). El error queda en la base aunque falle la publicación a la DLQ.
+6. Falla transitoria con `attempts < MAX_ATTEMPTS`: volver a `PENDING` y `nack(requeue=false)`; el dead-letter lo lleva a la cola de espera y de vuelta a la cola de trabajo. Falla permanente o intentos agotados: marcar `FAILED` con `last_error`, **publicar a `certs`/`dlq` con mensaje persistente, `mandatory` y publisher confirms, y recién después ACK**. Si falla el traslado, conservar el estado terminal y dejar la entrega sin ACK; cerrar y reconectar con espera creciente. La reentrega repite solo el traslado. La DLQ puede contener duplicados del mismo id después de una caída; la emisión no se duplica.
 7. Tras cualquier caída del worker, el broker reentrega y el paso 1 o 3 evita duplicar.
+
+Antes de fallar una solicitud interrumpida que alcanzó el límite, consultar el registro: una huella coincidente permite cerrar `ISSUED` sin otro intento. Un timeout del registro durante el último intento queda `PROCESSING` hasta poder reconciliarlo; no prueba que la escritura haya fallado. Si PostgreSQL no permite persistir el resultado, no confirmar el mensaje y reconectar con espera. JSON inválido, mensajes de más de 4096 bytes, UUID inválidos o solicitudes inexistentes se trasladan a DLQ sin reintentos de emisión.
 
 **Qué es transitorio / permanente [Decisión propuesta]:** transitorio = error de conexión a PostgreSQL o al registro; permanente = datos inválidos, excepción de generación de PDF, o fallo controlado `permanent` de la inyección de fallos.
 
@@ -161,9 +163,9 @@ Prefijo `/api`. JSON salvo donde se indica. Errores con formato único:
 | `GET /verify/{cert_id}` | público | Datos académicos registrados |
 | `POST /verify/{cert_id}/file` | público | Comparar PDF subido con la huella registrada |
 
-**`POST /batches`** — `multipart/form-data`: `course_name` (texto, 1–200), `completion_date` (`YYYY-MM-DD`), `file` (CSV). Cabecera obligatoria `Idempotency-Key` (texto, uuid recomendado).
+**`POST /batches`** — `multipart/form-data`: `course_name` (texto, 1–200), `completion_date` (`YYYY-MM-DD`, no futura segun el dia de Buenos Aires), `file` (CSV). Cabecera obligatoria `Idempotency-Key` (texto no vacio, espacios exteriores quitados, hasta 255 caracteres; uuid recomendado).
 
-- CSV: UTF-8, con cabecera, **una columna `email`**, máximo **100 filas** de datos. **[Decisión propuesta]** (el nombre del alumno sale de su cuenta precargada, no del CSV).
+- CSV: UTF-8 con o sin BOM, LF/CRLF; una columna obligatoria `email` y solo una columna adicional opcional `final_grade` (espacios y mayusculas tolerados); entre **1 y 100 filas** y hasta **1.048.576 bytes**. Cabeceras desconocidas/repetidas y filas con campos de mas/de menos se rechazan. Lineas vacias finales se ignoran; intermedias se rechazan conservando posicion. No se crean alumnos. `final_grade` omitida o vacia es null; si se informa admite decimal 0-10 inclusive, punto y hasta dos decimales, sin exponentes ni redondeo. No define umbral de aprobacion.
 - Todo o nada. Se informa y no se crea nada si: fila con email mal formado, email sin cuenta de alumno, email repetido dentro del CSV, o combinación alumno/curso/fecha ya existente.
 - `details`: `[ { "row": 3, "email": "x@y.com", "reason": "NO_ACCOUNT" | "DUPLICATE_IN_FILE" | "ALREADY_REQUESTED" | "INVALID_EMAIL" } ]` (`row` cuenta desde 1 sin la cabecera).
 - Idempotencia: `request_fingerprint` = SHA-256 de `course_name` normalizado + fecha + bytes del CSV. Misma clave y mismo fingerprint → `200` con el lote original (sin crear nada). Misma clave, otro fingerprint → `409`.
@@ -179,7 +181,7 @@ Prefijo `/api`. JSON salvo donde se indica. Errores con formato único:
   "counts": { "total": 20, "pending": 0, "processing": 1, "issued": 18, "failed": 1 },
   "items": [
     { "certificate_id": "<uuid>", "student_name": "...", "student_email": "...",
-      "status": "ISSUED", "attempts": 1, "last_error": null }
+      "status": "ISSUED", "attempts": 1, "last_error": null, "final_grade": 9.75 }
   ]
 }
 ```
@@ -197,22 +199,24 @@ El frontend consulta este endpoint cada 2 s mientras el estado sea `IN_PROGRESS`
   "student_name": "...", "institution": "...", "course_name": "...", "completion_date": "2026-10-30" }
 ```
 
-- `404` con `status: "NOT_FOUND"` si no está en `registry`. **Nunca** se devuelve email ni datos de cuenta.
-- `503 UNAVAILABLE` si el registro no responde (no confundir con «no registrado»).
+- `404` con `{ "error": { "code": "NOT_FOUND", "message": "Certificado no registrado", "details": [] } }` si no está en el registro. **Nunca** se devuelve email, nota ni datos de cuenta. UUID inválido: `400 VALIDATION_ERROR`.
+- `503 UNAVAILABLE` si el registro o los metadatos no pueden consultarse (no confundir con «no registrado»). B delega en C mediante `get_verification`, conectado a `RegistryVerification`; no usa la existencia de un certificado local como prueba de registro. Los falsos solo se usan en pruebas.
 
-**`POST /verify/{cert_id}/file`** (público) — `multipart/form-data`: `file` (PDF, máx. 5 MB). `200`:
+**`POST /verify/{cert_id}/file`** (público) — `multipart/form-data`: `file` (hasta 5.242.880 bytes inclusive; 5 MiB). `200`:
 
 ```json
 { "result": "VALID" | "ALTERED" | "NOT_FOUND" }
 ```
 
-- Calcula SHA-256 del archivo subido y lo compara con `registry.lookup(cert_id)`, **no** con la copia en `certificates`.
+- El adaptador lee como máximo 5.242.881 bytes y rechaza el exceso con `400 VALIDATION_ERROR`. UUID inválido o archivo ausente también devuelve 400. No persiste la subida ni decide autenticidad por nombre, extensión o MIME.
+- El caso de uso de C calcula SHA-256 del archivo subido y lo compara con `registry.lookup(cert_id)`, **no** con la copia en `certificates`.
+- La dependencia `get_verification` expone `compare_file(cert_id, content)`; C devuelve el resultado y traduce la indisponibilidad a `VerificationUnavailable`. La ejecución normal usa `SimulatedRegistry`; los falsos quedan limitados a pruebas.
 - `VALID`: coincide. `ALTERED`: el id existe y la huella difiere. `NOT_FOUND`: id sin registro. Registro no disponible: `503 UNAVAILABLE`.
 - **[Decisión propuesta]** La verificación de archivo cuelga de un `cert_id`: el QR del PDF apunta a `{PUBLIC_BASE_URL}/verify/{cert_id}` y esa página permite subir el archivo. No se intenta extraer el id desde el PDF subido. *(Cambia respecto del borrador previo, que listaba `POST /verify/file` sin id.)*
 
 ## 6. PDF y QR
 
-- ReportLab + `qrcode`. Un A4 sencillo con: institución, nombre del alumno, curso, fecha de finalización, identificador del certificado, QR.
+- ReportLab + `qrcode`. Diploma A4 horizontal en español con marco sobrio: institución, alumno, curso, fecha de finalización, identificador y QR. Nota final decimal con dos decimales solamente cuando existe; sin logos ni firmas inventadas. Textos largos se ajustan con saltos y tamaño sin truncarlos.
 - El QR codifica `{PUBLIC_BASE_URL}/verify/{cert_id}`. No incluye el hash del PDF (dependencia circular).
 - Los bytes se generan una sola vez y se guardan en `certificates.pdf`; el hash se calcula sobre esos bytes exactos. No usar fechas «ahora» al regenerar: toda fecha dentro del PDF sale de datos persistidos.
 
@@ -241,16 +245,17 @@ class Registry(Protocol):
 - `sample-data/lote-20.csv` (20 emails válidos) y variantes inválidas: `con-error.csv` (email sin cuenta + duplicado en el archivo).
 
 **`FAULT_INJECTION`** (D la usa; C la implementa en el worker; lista separada por comas):
-- `transient:<n>`: el worker falla `n` veces seguidas con error transitorio antes de dejar pasar.
+- `transient:<n>`: las primeras `n` ejecuciones elegibles del proceso fallan antes del registro. El contador es global al proceso, no por alumno, y se reinicia al recrear el worker.
 - `permanent:<email>`: la emisión de ese alumno falla con error permanente.
 - Determinista y repetible; nunca aleatoria.
+- Un fallo permanente del email tiene prioridad sobre el contador transitorio. Configuración inválida impide arrancar el worker; una reconexión al broker conserva el contador.
 
 ## 9. Qué consume cada frente
 
 | Frente | Consume | Mock hasta la integración |
 | --- | --- | --- |
 | A | Endpoints de §5 y errores | OpenAPI exportado de B o respuestas JSON fijas (MSW) con los ejemplos de este documento |
-| B | Esquema §3, mensaje §4, interfaz `Registry` §7 (para `/verify`) | `SimulatedRegistry` de C, o un stub con dict |
+| B | Esquema §3, mensaje §4, interfaz `Registry` §7 (para `/verify`) | `SimulatedRegistry` de C; sin C responde 503 (falsos solo en pruebas) |
 | C | Esquema §3, mensaje §4, algoritmo §4, `Registry` §7 | Script que inserta una `cert_request` en PostgreSQL y publica un mensaje a mano |
 | D | Puertos y variables §1, topología §4, seed §8 | Contenedores placeholder |
 
@@ -259,4 +264,8 @@ class Registry(Protocol):
 - Contraseñas y secretos reales para cloud (D, canal privado).
 - Diseño visual del PDF y de las pantallas (A, C).
 - Versiones exactas de imágenes y dependencias: fijarlas al iniciar el arranque limpio (D), no `latest`.
-- Límite de tamaño del CSV por encima de 100 filas y rendimiento: no se especifica.
+- CSV mayor a 1.048.576 bytes o 100 filas; rendimiento fuera del alcance de la demo.
+
+Validacion estructural CSV: archivo/cabecera usan fila 0; filas de datos empiezan en 1. Motivos: `EMPTY_FILE`, `INVALID_ENCODING`, `MALFORMED_CSV`, `MISSING_EMAIL_COLUMN`, `DUPLICATE_COLUMN`, `UNKNOWN_COLUMN`, `NO_DATA_ROWS`, `TOO_MANY_ROWS`, `EMPTY_ROW`, `INVALID_FIELD_COUNT`. Las solicitudes FAILED tambien bloquean duplicados.
+
+Nota final: `INVALID_GRADE` se acumula con errores de las otras filas y no crea datos parciales. La nota se incluye solo en items del detalle autorizado como numero o null, nunca en listados ni verificacion publica. AMQP conserva exactamente request_id y correlation_id. A debe mostrar la nota opcional en el detalle. C debe leer `cert_requests.final_grade` y representarla en el PDF antes de calcular la huella, omitiendo la etiqueta cuando es null. No se regeneran PDFs previos. La nota no cambia identidad ni permite reemision. Migracion 0003 conserva solicitudes previas con nota null.

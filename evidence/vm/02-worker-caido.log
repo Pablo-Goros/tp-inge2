@@ -1,0 +1,25 @@
+# 2026-11-16T17:11:57Z · commit ? · http://localhost:8080
+== Escenario 02-worker-caido
+-- 1. Detener worker y subir lote-20.csv
+   ok    worker corriendo = false
+   lote 54d90940-cb85-475d-9af3-bdc96a8e08fe
+   ok    worker arriba (running)
+-- 2. Tras emitir el primero, matar el worker con el lote incompleto
+   ok    worker corriendo = false
+   emitidos al momento de la caída: 1 / 20
+-- 3. Con el worker caído, el lote no avanza (y nada se pierde: los mensajes esperan en RabbitMQ)
+   ok    emitidos con el worker caído = 1
+   mensajes esperando en cert.issue: 19
+-- 4. Volver a prender el worker
+   ok    worker arriba (running)
+-- 5. El lote termina sin pérdidas ni duplicados
+   ok    estado del lote = COMPLETED
+   ok    solicitudes ISSUED = 20
+   ok    solicitudes trabadas en PROCESSING = 0
+   ok    solicitudes FAILED = 0
+   ok    certificados = 20
+   ok    huellas distintas = 20
+   ok    entradas de registry = 20
+   intentos por solicitud (los >1 fueron reentregados tras la caída):
+     1 intento(s): 20
+== PASS 02-worker-caido

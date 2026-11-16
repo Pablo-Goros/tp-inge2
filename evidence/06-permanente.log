@@ -1,0 +1,21 @@
+# 2026-11-16T05:14:37Z · commit 01f2081 · http://localhost:8080
+== Escenario 06-permanente
+-- 1. Recrear el worker con FAULT_INJECTION=permanent:alumno03@demo.test
+   ok    variable del worker = FAULT_INJECTION=permanent:alumno03@demo.test
+   ok    worker arriba (running)
+-- 2. Subir lote-20.csv
+-- 3. El lote termina con un error visible y el resto emitido
+   ok    estado del lote = COMPLETED_WITH_ERRORS
+   ok    solicitudes ISSUED = 19
+   ok    solicitudes FAILED = 1
+   ok    PDF preparados (incluido el fallido) = 20
+   ok    certificados registrados = 19
+   ok    alumno que falló = alumno03@demo.test
+   ok    last_error = Fallo permanente controlado de demo
+   ok    PDF fallido no descargable = 404
+-- 4. El mensaje quedó aislado en la cola de fallidos
+   ok    mensajes en cert.issue.dlq = 2
+-- 5. El operador ve el error en el detalle del lote
+     {"certificate_id":"3b021426-1110-4127-9ce1-f3154ae2f3bd","student_name":"Alumno 03","student_email":"alumno03@demo.test","status":"FAILED","attempts":1,"final_grade":null,"last_error":"Fallo permanente controlado de demo"}
+   ok    estado en la API = FAILED
+== PASS 06-permanente

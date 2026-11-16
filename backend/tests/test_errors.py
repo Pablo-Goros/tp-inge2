@@ -14,9 +14,10 @@ def test_request_validation_error_is_400_envelope(client):
     assert isinstance(err["details"], list) and err["details"]
 
 
-def test_verify_routes_are_public_stubs(client):
+def test_public_verification_unknown_identifier_returns_not_found(client):
     r = client.get("/api/verify/00000000-0000-0000-0000-000000000000")
-    assert r.status_code == 501
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "NOT_FOUND"
 
 
 def test_method_not_allowed_is_http_error_envelope(client):
@@ -42,7 +43,7 @@ def test_unhandled_exception_is_500_envelope(session):
     assert "secreto" not in r.text
 
 
-def test_openapi_has_no_422_and_documents_400_and_501():
+def test_openapi_has_no_422_and_documents_validation_and_unavailable():
     from app.api.main import create_app
 
     spec = create_app().openapi()
@@ -52,7 +53,8 @@ def test_openapi_has_no_422_and_documents_400_and_501():
     assert "HTTPValidationError" not in spec["components"]["schemas"]
     login = spec["paths"]["/api/auth/login"]["post"]["responses"]
     assert "400" in login and "401" in login
-    assert "501" in spec["paths"]["/api/verify/{cert_id}"]["get"]["responses"]
+    verify = spec["paths"]["/api/verify/{cert_id}"]["get"]["responses"]
+    assert "503" in verify and "501" not in verify
     pdf = spec["paths"]["/api/certificates/{cert_id}/pdf"]["get"]["responses"]["200"]["content"]
     assert list(pdf) == ["application/pdf"]
     post = spec["paths"]["/api/batches"]["post"]["responses"]

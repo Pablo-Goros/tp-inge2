@@ -1,6 +1,8 @@
 # Arquitectura propuesta
 
-Diseño para la PoC, todavía no implementado. El equipo pidió separación clara de frontend y backend: se adopta React como propuesta de frontend separado y se mantiene Python/FastAPI para el backend. Ver el [diagrama de arquitectura y sus módulos](architecture-diagram.md). RabbitMQ y blockchain local están confirmados por el equipo. Se propone un monolito modular con procesos separados para HTTP, publicación y procesamiento; comparten código y PostgreSQL. No se necesitan microservicios independientes por cada entidad.
+Estado vigente, 16/11/2026: monolito modular Python/FastAPI con procesos separados de API, publicación y worker; comparten PostgreSQL y se comunican por RabbitMQ. C implementa PDF/QR, registro simulado y verificación. Compose inicializa el backend y sus dependencias; React todavía está pendiente. El [contrato vigente](contracts.md) y la [entrega de C](specs/frente-c-emision/entrega.md) describen el comportamiento implementado.
+
+Las referencias a Solidity, Anvil y blockchain que se conservan abajo documentan la propuesta original y una ampliación futura, **no servicios implementados ni requeridos por el arranque actual**. El registro de esta entrega es una tabla PostgreSQL de solo inserción, detrás de `Registry.register/lookup`, con transacciones separadas del estado de emisión y reconciliación por identificador.
 
 ## Stack y responsabilidades
 
@@ -14,7 +16,7 @@ Diseño para la PoC, todavía no implementado. El equipo pidió separación clar
 | Mensajería | RabbitMQ + Pika | Cola de trabajos, confirmaciones y recuperación; tecnología investigada para la materia |
 | Procesamiento | Worker Python del mismo proyecto | Construye el certificado, registra su huella y guarda el resultado |
 | Publicación confiable | Proceso Python que lee outbox | Recupera solicitudes aceptadas aunque el broker estuviera caído |
-| Registro | Solidity mínimo + Anvil + web3.py | Cadena EVM de desarrollo, transacciones reales locales y lectura del contrato desde Python |
+| Registro vigente | PostgreSQL detrás de `SimulatedRegistry` | Registro idempotente y de solo inserción; blockchain queda como ampliación |
 | Ejecución | Docker Compose | Una composición para local y VM cloud, con inicialización automática |
 | Verificación técnica | pytest e integración con los servicios reales | Probar recuperaciones y duplicados donde las simulaciones no alcanzan |
 

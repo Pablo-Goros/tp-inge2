@@ -98,3 +98,32 @@ def test_all_issues_reported_not_only_first():
         (4, "DUPLICATE_IN_FILE"),
         (5, "ALREADY_REQUESTED"),
     ]
+
+@pytest.mark.parametrize(('data', 'reason'), [
+    (b'email,email\na@x.com,a@x.com', 'DUPLICATE_COLUMN'),
+    (b'email,other\na@x.com,x', 'UNKNOWN_COLUMN'),
+])
+def test_strict_header(data, reason):
+    assert reason_of(data) == reason
+
+@pytest.mark.parametrize(('data', 'row', 'reason'), [
+    (b'email\na@x.com\n\nb@x.com', 2, 'EMPTY_ROW'),
+    (b'email\na@x.com\nb@x.com,extra', 2, 'INVALID_FIELD_COUNT'),
+])
+def test_structural_errors_preserve_row_number(data, row, reason):
+    with pytest.raises(CsvFormatError) as exc:
+        parse_csv(data)
+    assert exc.value.row == row
+    assert exc.value.reason == reason
+
+def test_all_structural_errors_preserve_original_positions():
+    with pytest.raises(CsvFormatError) as exc:
+        parse_csv(b'email\n\na@x.com,extra\n\nb@x.com')
+    assert [(issue.row, issue.reason) for issue in exc.value.issues] == [
+        (1, 'EMPTY_ROW'), (2, 'INVALID_FIELD_COUNT'), (3, 'EMPTY_ROW')]
+
+
+def test_csv_optional_grade_retains_student_association():
+    from app.domain.csv_validation import parse_csv_rows
+    rows = parse_csv_rows(b' FINAL_GRADE , EMAIL \n9.75, A@X.com\n,b@x.com')
+    assert [(r.email, r.final_grade) for r in rows] == [('A@X.com', '9.75'), ('b@x.com', '')]

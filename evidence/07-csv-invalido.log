@@ -1,0 +1,30 @@
+# 2026-11-16T05:15:08Z · commit 01f2081 · http://localhost:8080
+== Escenario 07-csv-invalido
+-- Subir sample-data/con-error.csv (email sin cuenta + email repetido + una fila válida)
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "El lote tiene filas inválidas",
+    "details": [
+      {
+        "row": 2,
+        "email": "nadie@demo.test",
+        "reason": "NO_ACCOUNT"
+      },
+      {
+        "row": 4,
+        "email": "alumno22@demo.test",
+        "reason": "DUPLICATE_IN_FILE"
+      }
+    ]
+  }
+}
+   ok    HTTP = 400
+   ok    error.code = VALIDATION_ERROR
+   ok    motivo de nadie@demo.test = NO_ACCOUNT
+   ok    motivo de alumno22@demo.test = DUPLICATE_IN_FILE
+-- Nada se creó (todo o nada)
+   ok    lotes = 14
+   ok    solicitudes = 243
+   ok    filas de outbox = 243
+== PASS 07-csv-invalido

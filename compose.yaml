@@ -1,0 +1,153 @@
+# PoC certificados — `docker compose up` levanta e inicializa todo (local y VM).
+# Contratos: docs/contracts.md §1 (puertos y variables), §4 (topología), §8 (seed).
+#
+# Versiones fijas, verificadas el 14/11/2026 (nunca `latest`):
+#   postgres:17.6-alpine · rabbitmq:4.1.4-management-alpine · nginx:1.28.0-alpine
+#   backend: python:3.11.9-slim (backend/Dockerfile)
+#
+# Todas las variables tienen valor de demo, así que funciona sin `.env`.
+# En la VM se crea un `.env` (ver .env.example) con secretos propios.
+
+name: certs
+
+x-backend-env: &backend-env
+  DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-certs}:${POSTGRES_PASSWORD:-certs}@postgres:5432/${POSTGRES_DB:-certs}
+  RABBITMQ_URL: amqp://${RABBITMQ_USER:-certs}:${RABBITMQ_PASSWORD:-certs}@rabbitmq:5672/%2F
+  JWT_SECRET: ${JWT_SECRET:-demo-jwt-secret-solo-local-cambiar-en-cloud}
+  DEMO_PASSWORD: ${DEMO_PASSWORD:-demo1234}
+  PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+  REGISTRY_BACKEND: ${REGISTRY_BACKEND:-simulated}
+  MAX_ATTEMPTS: ${MAX_ATTEMPTS:-3}
+  RETRY_DELAY_SECONDS: ${RETRY_DELAY_SECONDS:-5}
+  POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-1.0}
+  INIT_TIMEOUT_SECONDS: ${INIT_TIMEOUT_SECONDS:-60}
+  BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+  FAULT_INJECTION: ${FAULT_INJECTION:-}
+
+# Una sola imagen para init, api, publisher y worker; cambia el módulo.
+# El Dockerfile tiene ENTRYPOINT ["python", "-m"]: el command es solo el módulo.
+x-backend: &backend
+  build: ./backend
+  image: certs-backend:local
+  environment: *backend-env
+
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-certs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-certs}
+      POSTGRES_DB: ${POSTGRES_DB:-certs}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    # Sin puertos al host: solo red interna.
+
+  rabbitmq:
+    image: rabbitmq:4.1.4-management-alpine
+    restart: unless-stopped
+    # Hostname fijo: RabbitMQ guarda los datos por nombre de nodo; si cambia, "pierde" las colas.
+    hostname: rabbitmq
+    environment:
+      # `guest` solo puede conectarse desde localhost, por eso un usuario propio.
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-certs}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-certs}
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    ports:
+      - "127.0.0.1:15672:15672"   # consola web, solo desde la propia máquina (en la VM: túnel SSH)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Tarea de una sola vez: migraciones, seed y topología. Idempotente (segundo `up` no duplica).
+  init:
+    <<: *backend
+    command: ["app.entrypoints.init"]
+    restart: "no"
+    depends_on:
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  api:
+    <<: *backend
+    command: ["app.entrypoints.api"]
+    restart: unless-stopped
+    depends_on:
+      init: { condition: service_completed_successfully }
+      postgres: { condition: service_healthy }
+    healthcheck:
+      # La imagen no trae curl; se usa Python.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/openapi.json', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    # Sin puertos al host: se entra por `web` en /api.
+
+  publisher:
+    <<: *backend
+    command: ["app.entrypoints.publisher"]
+    restart: unless-stopped
+    depends_on:
+      init: { condition: service_completed_successfully }
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  worker:
+    <<: *backend
+    command: ["app.entrypoints.worker"]
+    restart: unless-stopped
+    depends_on:
+      init: { condition: service_completed_successfully }
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+
+  # PLACEHOLDER hasta que el frente A entregue frontend/Dockerfile + nginx.conf.
+  # Ya hace lo que hará el real: sirve una página y reenvía /api/* a api:8000.
+  # Cuando exista: reemplazar `image` + `configs` por `build: ./frontend`.
+  web:
+    image: nginx:1.28.0-alpine
+    restart: unless-stopped
+    ports:
+      - "8080:80"   # único puerto público
+    configs:
+      - source: web_nginx_conf
+        target: /etc/nginx/conf.d/default.conf
+      - source: web_index_html
+        target: /usr/share/nginx/html/index.html
+    depends_on:
+      api: { condition: service_healthy }
+
+configs:
+  web_nginx_conf:
+    content: |
+      server {
+        listen 80;
+        # Nginx acepta 1 MB por defecto; el PDF de /verify/{id}/file puede pesar hasta 5 MB.
+        client_max_body_size 6m;
+        location /api/ {
+          proxy_pass http://api:8000;
+          proxy_set_header Host $$host;
+          proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+        }
+        location / {
+          root /usr/share/nginx/html;
+          try_files $$uri /index.html;
+        }
+      }
+  web_index_html:
+    content: |
+      <!doctype html><meta charset="utf-8"><title>Certificados PoC</title>
+      <h1>Certificados PoC</h1>
+      <p>Frontend pendiente (frente A). La API responde en <code>/api</code>.</p>
+
+volumes:
+  pgdata:
+  rabbitmqdata:

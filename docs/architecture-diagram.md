@@ -1,5 +1,7 @@
 # Arquitectura con frontend y backend separados
 
+**Nota de implementación (16/11):** este diagrama conserva la propuesta original. En la entrega vigente el nodo Anvil se sustituye por `SimulatedRegistry` sobre PostgreSQL; `init` no despliega contratos. El backend, publicador y worker están implementados; React sigue pendiente. Fuente vigente: [contratos](contracts.md) y [entrega C](specs/frente-c-emision/entrega.md).
+
 Propuesta actualizada el 09/11/2026 por preferencia del equipo: frontend React separado y backend Python/FastAPI. El sistema sigue siendo una PoC con un único despliegue Compose; separar frontend y backend no exige convertir los módulos del backend en microservicios.
 
 ## Vista de componentes y despliegue

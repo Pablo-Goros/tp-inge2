@@ -157,8 +157,9 @@ def test_crash_between_publish_and_mark_may_republish_same_request_id(session, c
     session.refresh(rows[0])
     assert rows[0].published_at is None
     assert publish_pending(session, channel) == 1
-    ids = [b["request_id"] for _, b in drain(channel)]
-    assert ids == [str(rows[0].request_id)] * 2
+    messages = [body for _, body in drain(channel)]
+    assert messages == [{"request_id": str(rows[0].request_id),
+                         "correlation_id": str(rows[0].correlation_id)}] * 2
 
 
 def test_two_publishers_do_not_double_publish_same_row(engine, committed, channel):
@@ -186,7 +187,7 @@ def test_two_publishers_do_not_double_publish_same_row(engine, committed, channe
         assert s.scalar(select(text("count(*)")).select_from(Outbox).where(Outbox.published_at.is_(None))) == 0
 
 
-def test_broker_down_leaves_rows_pending_and_recovers(engine, committed):
+def test_broker_down_accepts_http_batch_and_recovers(engine, committed):
     from app.entrypoints.publisher import run
 
     require_test_broker()
@@ -194,16 +195,55 @@ def test_broker_down_leaves_rows_pending_and_recovers(engine, committed):
     declare_topology(conn.channel())
     _purge(conn.channel())
     conn.close()
-    committed(3)
+    from fastapi.testclient import TestClient
+
+    from app.api.auth import hash_password
+    from app.api.main import create_app
+    from app.infrastructure.db import get_session
+
+    with Session(engine) as s:
+        inst = Institution(name="Recovery test")
+        s.add(inst)
+        s.flush()
+        password_hash = hash_password("test-recovery", rounds=4)
+        s.add(User(institution_id=inst.id, email="recovery-op@test.local", name="Operator",
+                   role="operator", password_hash=password_hash))
+        s.add(User(institution_id=inst.id, email="recovery-st@test.local", name="Student",
+                   role="student", password_hash=password_hash))
+        s.commit()
+
+    def sessions():
+        with Session(engine) as s:
+            yield s
+
+    app = create_app()
+    app.dependency_overrides[get_session] = sessions
     stop = threading.Event()
     t = threading.Thread(target=run, args=(stop,), kwargs={"max_backoff": 1.0}, daemon=True)
     try:
         subprocess.run(COMPOSE + ["stop", "rabbitmq"], check=True, capture_output=True)
+        with TestClient(app) as client:
+            login = client.post("/api/auth/login", json={
+                "email": "recovery-op@test.local", "password": "test-recovery"})
+            assert login.status_code == 200, login.text
+            response = client.post("/api/batches", headers={
+                "Authorization": "Bearer " + login.json()["access_token"],
+                "Idempotency-Key": "broker-recovery",
+            }, data={"course_name": "Recovery", "completion_date": "2020-01-01"},
+                files={"file": ("students.csv", b"email\nrecovery-st@test.local\n", "text/csv")})
+            assert response.status_code == 201, response.text
+            batch_id = uuid.UUID(response.json()["batch_id"])
+        with Session(engine) as s:
+            request = s.scalar(select(CertRequest).where(CertRequest.batch_id == batch_id))
+            assert request.status == "PENDING"
+            row = s.scalar(select(Outbox).where(Outbox.request_id == request.id))
+            assert row.published_at is None
+            expected = {"request_id": str(row.request_id), "correlation_id": str(row.correlation_id)}
         t.start()
         time.sleep(4)  # la publicación falla; el loop sigue vivo reintentando
         assert t.is_alive()
         with Session(engine) as s:
-            assert s.query(Outbox).filter(Outbox.published_at.is_(None)).count() == 3
+            assert s.query(Outbox).filter(Outbox.published_at.is_(None)).count() == 1
     finally:
         subprocess.run(COMPOSE + ["start", "rabbitmq"], check=True, capture_output=True)
     try:
@@ -220,7 +260,14 @@ def test_broker_down_leaves_rows_pending_and_recovers(engine, committed):
         t.join(10)
     conn = connect(os.environ["RABBITMQ_URL"])
     try:
-        assert len(drain(conn.channel())) == 3
+        messages = drain(conn.channel())
+        assert [body for _, body in messages] == [expected]
+        assert messages[0][0].delivery_mode == 2
+        ch = conn.channel()
+        ch.confirm_delivery()
+        with Session(engine) as s:
+            assert publish_pending(s, ch) == 0
+        assert drain(ch) == []
     finally:
         conn.close()
 

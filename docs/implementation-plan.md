@@ -1,5 +1,7 @@
 # Plan de trabajo hasta la entrega
 
+**Plan histórico:** la implementación vigente integra B, C y la infraestructura de D en `frente-c`, con registro simulado; blockchain no integra esta entrega. Consultar [entrega C](specs/frente-c-emision/entrega.md) para avances y pruebas. Las fechas y asignaciones originales que siguen no son resultados observados.
+
 El objetivo es terminar un recorrido verificable con RabbitMQ, blockchain local, ejecución en Compose y cloud. No se planifica completar la visión comercial en el plazo académico. Alcance base confirmado por el usuario el 09/11/2026. Este documento ordena capacidades y dependencias; no crea tickets ni reemplaza las futuras especificaciones.
 
 ## Capacidad y criterio de recorte

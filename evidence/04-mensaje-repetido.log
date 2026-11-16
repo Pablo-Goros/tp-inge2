@@ -1,0 +1,21 @@
+# 2026-11-16T05:13:43Z · commit 01f2081 · http://localhost:8080
+== Escenario 04-mensaje-repetido
+-- A1. Primer POST de lote-20.csv
+   ok    HTTP del primer POST = 201
+-- A2. Mismo POST, misma clave (simula un reintento por corte de conexión)
+   ok    HTTP del POST repetido = 200
+   ok    batch_id devuelto = 57e7e273-499b-4408-9ccb-0adaba47ac8c
+   ok    lotes en la base = 12
+   ok    solicitudes del lote = 20
+   ok    filas de outbox del lote = 20
+-- A3. Misma clave con otro contenido -> conflicto
+   ok    HTTP = 409
+   ok    error.code = IDEMPOTENCY_CONFLICT
+-- B. Reenviar a mano un mensaje ya emitido
+   ok    estado del lote = COMPLETED
+   solicitud 161e7192-cbed-4c02-a5ab-84aa7421b0f6: ISSUED|1|af575642efbe4e009dab124e9f85a2e41b6f02f251eef0ee20033873dc24ac08|2026-11-16 05:13:49.667008+00|af575642efbe4e009dab124e9f85a2e41b6f02f251eef0ee20033873dc24ac08|2026-11-16 05:13:49.685432+00
+   ok    mensaje ruteado a cert.issue = true
+   ok    estado, intentos, PDF y registro sin cambios = ISSUED|1|af575642efbe4e009dab124e9f85a2e41b6f02f251eef0ee20033873dc24ac08|2026-11-16 05:13:49.667008+00|af575642efbe4e009dab124e9f85a2e41b6f02f251eef0ee20033873dc24ac08|2026-11-16 05:13:49.685432+00
+   ok    certificados del lote = 20
+   ok    entradas de registry del lote = 20
+== PASS 04-mensaje-repetido

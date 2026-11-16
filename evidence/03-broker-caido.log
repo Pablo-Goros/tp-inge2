@@ -1,0 +1,18 @@
+# 2026-11-16T05:12:53Z · commit 01f2081 · http://localhost:8080
+== Escenario 03-broker-caido
+-- 1. Detener RabbitMQ
+   ok    rabbitmq corriendo = false
+-- 2. Subir lote-20.csv con el broker caído
+   ok    HTTP (la API acepta sin depender del broker) = 201
+-- 3. Las 20 solicitudes quedan guardadas esperando en el outbox
+   ok    filas de outbox sin publicar = 20
+-- 4. Volver a prender RabbitMQ
+   ok    rabbitmq arriba (healthy)
+-- 5. El publicador se reconecta solo y publica las 20
+   ok    filas de outbox sin publicar = 0
+   (publicadas 23 s después de que el broker volvió)
+-- 6. El lote termina de emitirse
+   ok    estado del lote = COMPLETED
+   ok    certificados del lote = 20
+   ok    entradas de registry del lote = 20
+== PASS 03-broker-caido
