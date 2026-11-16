@@ -4,6 +4,8 @@ Estado: el cliente HTTP (`VITE_API=http`) todavía no se verificó de punta a pu
 
 Fuente: [contracts.md](contracts.md) §2 y §5. El cliente está definido en `frontend/src/api/ApiClient.ts` (mock en memoria por defecto; `VITE_API=http` usa `/api`).
 
+Con `VITE_API=http` el backend debe estar arriba con `docker compose up -d --build`; el proxy de Vite apunta por defecto a http://localhost:8080 y se cambia con `VITE_PROXY_TARGET` (p. ej. http://localhost:8000 si corrés uvicorn directo).
+
 ## Endpoints
 
 | Método y ruta | Rol | Método del cliente | Notas |
@@ -27,8 +29,9 @@ Todos los errores usan el envelope `{ error: { code, message, details } }` y se 
 | `GET /verify/{cert_id}` | `issued_at` | Fecha de emisión en la verificación |
 | `GET /batches/{id}` | `created_at` | «creado dd/mm/aaaa» en el detalle (ya viene en el listado) |
 | `GET /batches` y `/batches/{id}` | código corto de lote | Se muestra `#7F3A…` (4 primeros hex del uuid, sin número correlativo); no hace falta campo nuevo salvo que prefieran otro formato |
-| `POST /batches` (CSV) | columnas `email` (obligatoria) y `final_grade` (opcional) | Alineado con el backend: cualquier otra columna da `UNKNOWN_COLUMN` (400, fila 0). UTF-8, coma, 1-100 filas, hasta 1 MB, sin líneas vacías intermedias; `final_grade` 0-10 con hasta 2 decimales. Ejemplo y ayuda: `frontend/src/config/pending.ts` |
 | `/verify` sin `cert_id` | — | El contrato verifica por `cert_id`; el enlace «Verificar un certificado» del login lleva a `/verify`. `TODO(equipo)`: definir qué se muestra sin id. Provisorio (etapa 3): campo «Identificador del certificado» que navega a `/verify/:id` |
+
+Formato del CSV de `POST /batches` (ya alineado con el backend, no está pendiente): columnas `email` (obligatoria) y `final_grade` (opcional); cualquier otra columna da `UNKNOWN_COLUMN` (400, fila 0). UTF-8, coma, 1-100 filas, hasta 1 MB, sin líneas vacías intermedias; `final_grade` 0-10 con hasta 2 decimales. Ejemplo y ayuda: `frontend/src/config/pending.ts`
 
 ## Cuentas y escenarios del mock
 
@@ -49,7 +52,7 @@ Escenarios (combinables, separados por coma): `?mock=offline,slow`. Se guardan e
 | `verify-valid` / `verify-altered` / `verify-notfound` / `verify-unavailable` | Fuerzan el resultado de `verifyFile` (y 404/503 en `getPublicCertificate`) |
 | `strict-contract` | Omite `institution`, `issued_at` y `created_at` |
 
-Sin escenario, la validación del CSV es real: los 4 motivos (`INVALID_EMAIL`, `DUPLICATE_IN_FILE`, `NO_ACCOUNT`, `ALREADY_REQUESTED`) salen de los datos (p. ej. curso «Introducción a Criptografía Aplicada» con fecha 2026-10-30 ya tiene a `alumno01..48`). `verifyFile` da `VALID`, `ALTERED` si el nombre del archivo contiene «alterado»/«altered», y `NOT_FOUND` si el id no existe. La misma `Idempotency-Key` devuelve el mismo lote sin crear otro.
+Sin escenario, la validación del CSV es real: los motivos de fila que el mock puede detectar (`INVALID_EMAIL`, `DUPLICATE_IN_FILE`, `NO_ACCOUNT`, `ALREADY_REQUESTED`; el backend real suma `INVALID_GRADE`, `EMPTY_ROW`, `INVALID_FIELD_COUNT` y errores de archivo en fila 0) salen de los datos (p. ej. curso «Introducción a Criptografía Aplicada» con fecha 2026-10-30 ya tiene a `alumno01..48`). `verifyFile` da `VALID`, `ALTERED` si el nombre del archivo contiene «alterado»/«altered», y `NOT_FOUND` si el id no existe. La misma `Idempotency-Key` devuelve el mismo lote sin crear otro.
 
 ## TODO(equipo) pendientes (`grep -rn "TODO(equipo)" frontend/src`)
 
