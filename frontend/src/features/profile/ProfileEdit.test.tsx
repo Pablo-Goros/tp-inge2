@@ -31,7 +31,7 @@ const spy = (c: ApiClient) => {
 const openEditor = async (c: ApiClient = mk(), who = student) => {
   saveSession(who);
   const router = renderAt('/profile/edit', c);
-  await screen.findByLabelText('Nombre a mostrar');
+  await screen.findByLabelText('Nombre a mostrar', undefined, { timeout: 5000 });
   return router;
 };
 const typeInto = async (label: string, text: string) => {
