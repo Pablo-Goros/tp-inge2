@@ -1,4 +1,5 @@
 """Verificación de ID tokens de Google Identity Services (RS256, claves JWKS de Google)."""
+from dataclasses import dataclass
 from functools import lru_cache
 
 import jwt
@@ -11,6 +12,14 @@ class InvalidGoogleToken(Exception):
     pass
 
 
+@dataclass(frozen=True)
+class GoogleIdentity:
+    email: str  # sin normalizar
+    name: str | None
+
+
+
+
 @lru_cache
 def _jwks_client() -> jwt.PyJWKClient:
     return jwt.PyJWKClient(GOOGLE_JWKS_URL, timeout=5)
@@ -20,8 +29,8 @@ def _signing_key(token: str):
     return _jwks_client().get_signing_key_from_jwt(token).key
 
 
-def verify_google_id_token(credential: str, client_id: str) -> str:
-    """Devuelve el email (sin normalizar) de un ID token válido con email verificado."""
+def verify_google_id_token(credential: str, client_id: str) -> GoogleIdentity:
+    """Identidad (email sin normalizar y nombre opcional) de un ID token válido con email verificado."""
     if not client_id:
         raise InvalidGoogleToken("GOOGLE_CLIENT_ID no configurado")
     try:
@@ -42,4 +51,5 @@ def verify_google_id_token(credential: str, client_id: str) -> str:
     email = claims["email"]
     if claims.get("email_verified") is not True or not isinstance(email, str):
         raise InvalidGoogleToken("email no verificado")
-    return email
+    name = claims.get("name")
+    return GoogleIdentity(email=email, name=name if isinstance(name, str) and name else None)
