@@ -66,6 +66,8 @@ export interface CreateBatchResult {
  */
 export interface ApiClient {
   login(email: string, password: string): Promise<LoginResponse>;
+  /** POST /auth/google con el ID token de Google. 401 → ApiError UNAUTHENTICATED (no cierra sesión). */
+  loginWithGoogle(credential: string): Promise<LoginResponse>;
   createBatch(input: CreateBatchInput): Promise<CreateBatchResult>;
   listBatches(): Promise<BatchSummary[]>;
   getBatch(id: string): Promise<BatchDetail>;

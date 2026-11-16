@@ -4,7 +4,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { createMockClient } from '../../api/mock/MockApiClient';
 import { clearSession, loadSession, saveSession } from '../../api/token';
 import { buildRoutes } from '../../app/routes';
-import { homeFor, useApi } from './AuthProvider';
+import { homeFor, useApi, useAuth } from './AuthProvider';
 
 const client = (sc: string[] = []) => createMockClient({ latencyMs: 0, scenarios: () => new Set(sc) });
 
@@ -171,5 +171,40 @@ describe('sesión', () => {
     await userEvent.click(screen.getByRole('button', { name: 'cargar' }));
     await waitFor(() => expect(router.state.location.pathname).toBe('/login'));
     expect(loadSession()).toBeNull();
+  });
+});
+
+describe('loginWithGoogle', () => {
+  function GoogleProbe() {
+    const auth = useAuth();
+    return (
+      <>
+        <button onClick={() => auth.loginWithGoogle('mock-google:alumno01@demo.test').catch(() => {})}>google ok</button>
+        <button onClick={() => auth.api.loginWithGoogle('basura').catch(() => {})}>google mal</button>
+      </>
+    );
+  }
+  function renderProbe() {
+    const routes = buildRoutes(client());
+    routes[0].children![0].children = [{ path: '/probe', element: <GoogleProbe /> }, { path: '/login', element: <p>pantalla login</p> }];
+    const router = createMemoryRouter(routes, { initialEntries: ['/probe'] });
+    render(<RouterProvider router={router} />);
+    return router;
+  }
+
+  it('guarda usuario y token como login', async () => {
+    renderProbe();
+    await userEvent.click(screen.getByRole('button', { name: 'google ok' }));
+    await waitFor(() => expect(loadSession()?.user.role).toBe('student'));
+    expect(loadSession()?.token).toBe('mock:alumno01@demo.test');
+  });
+
+  it('un 401 no cierra la sesión ni redirige', async () => {
+    saveSession(operator);
+    const router = renderProbe();
+    await userEvent.click(screen.getByRole('button', { name: 'google mal' }));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(router.state.location.pathname).toBe('/probe');
+    expect(loadSession()).not.toBeNull();
   });
 });

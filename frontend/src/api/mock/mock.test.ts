@@ -112,3 +112,15 @@ describe('escenarios y datos', () => {
     expect((await mk().downloadCertificatePdf(c.certificate_id)).type).toBe('application/pdf');
   });
 });
+
+describe('loginWithGoogle', () => {
+  it('credencial mock-google:<email> de un usuario existente entra con su rol', async () => {
+    const res = await mk().loginWithGoogle('mock-google:alumno01@demo.test');
+    expect(res.user.role).toBe('student');
+  });
+
+  it.each(['mock-google:nadie@demo.test', 'basura'])('%s -> 401 UNAUTHENTICATED', async (cred) => {
+    await expect(mk().loginWithGoogle(cred)).rejects.toMatchObject({ status: 401, code: 'UNAUTHENTICATED' });
+    await expect(mk().loginWithGoogle(cred)).rejects.toBeInstanceOf(ApiError);
+  });
+});

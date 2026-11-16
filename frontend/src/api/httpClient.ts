@@ -41,6 +41,13 @@ export const httpClient: ApiClient = {
     const b = await json<{ access_token: string; role: Role; name: string }>(res);
     return { token: b.access_token, user: { name: b.name, role: b.role } } satisfies LoginResponse;
   },
+  async loginWithGoogle(credential) {
+    const res = await request('/auth/google', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ credential }),
+    }, false);
+    const b = await json<{ access_token: string; role: Role; name: string }>(res);
+    return { token: b.access_token, user: { name: b.name, role: b.role } } satisfies LoginResponse;
+  },
   async createBatch({ courseName, completionDate, file, idempotencyKey }) {
     const form = new FormData();
     form.set('course_name', courseName);

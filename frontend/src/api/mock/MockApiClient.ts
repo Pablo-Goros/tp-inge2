@@ -109,6 +109,14 @@ export function createMockClient(opts: MockOptions = {}): ApiClient {
       return { token: TOKEN_PREFIX + user.email, user: { name: user.name, role: user.role } };
     },
 
+    async loginWithGoogle(credential): Promise<LoginResponse> {
+      await gate({ anonymous: true });
+      const email = credential.startsWith('mock-google:') ? credential.slice('mock-google:'.length).trim().toLowerCase() : '';
+      const user = USERS.find((u) => u.email === email);
+      if (!user) throw new ApiError(401, 'UNAUTHENTICATED', 'No pudimos validar tu cuenta de Google.');
+      return { token: TOKEN_PREFIX + user.email, user: { name: user.name, role: user.role } };
+    },
+
     async createBatch({ courseName, completionDate, file, idempotencyKey }: CreateBatchInput): Promise<CreateBatchResult> {
       const sc = await gate();
       auth('operator', sc);
