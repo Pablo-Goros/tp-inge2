@@ -148,6 +148,10 @@ Los diez escenarios pasaron con la aplicación real en Compose el 16/11/2026; ve
 
 Para correr los escenarios contra otra máquina, por ejemplo la VM: ejecutarlos **en esa máquina**, ya que detienen sus servicios. `BASE_URL` cambia la URL de la API.
 
+## Demo guiada
+
+`scripts/demo.sh` recorre el flujo en unos 7 minutos, con pausas entre pasos: lote aceptado con el worker caído, recuperación sin duplicados, descarga del alumno y verificación del original frente a uno alterado. `DEMO_FALLA=1` agrega la falla permanente. El guion de la defensa, el plan B y las preguntas probables están en [docs/demo-script.md](docs/demo-script.md).
+
 ## Configuración
 
 Todas las variables, con su explicación, están en [.env.example](.env.example) y en [docs/contracts.md §1](docs/contracts.md). Las más importantes:
