@@ -2,9 +2,13 @@
 NOTA PARA EL EQUIPO (no se renderiza; borrar antes de entregar)
 - Borrador iniciado el 14/11/2026 (frente D). Límite: 5 páginas de cuerpo (secciones 1 a 5),
   sin contar portada, índice ni anexos. El cuerpo apunta a unas 2300 palabras + 1 diagrama.
-- Escrito con REGISTRO SIMULADO (default de contracts.md §7). Si el 15/11 se decide blockchain
-  real, revisar §2.3, §3 y §5.2 (buscar "registro simulado").
+- REGISTRO SIMULADO confirmado: C entregó SimulatedRegistry; blockchain no integra la entrega.
 - Todo lo marcado ⟨PENDIENTE⟩ se completa SOLO con resultados de evidence/. No inventar números.
+- Falta del grupo: nombre del grupo, integrantes, horas-persona por frente (§5.3).
+- Si el frontend React no llega, corregir §3 ("Un frontend React se sirve detrás de Nginx").
+- LARGO (medido el 16/11, A4, márgenes 2 cm, 11 pt): el cuerpo ocupa 5 páginas JUSTAS (~3 líneas
+  libres). Todo agregado obliga a recortar otra cosa. Al exportar el PDF final, revisar que el diagrama
+  mermaid renderizado no empuje el texto a una sexta página.
 -->
 
 # Emisión y verificación de certificados académicos con procesamiento asincrónico confiable
@@ -141,16 +145,9 @@ Un detalle de diseño crítico: el PDF se genera **una sola vez** y se guardan s
 
 ### 4.4 Análisis de fallas
 
-| Falla | Qué pasa | Resultado esperado |
-| --- | --- | --- |
-| API cae antes del commit | No se creó nada | El operador reintenta con la misma clave |
-| Broker caído al aceptar | Las filas quedan en el outbox | Se publican al recuperarse |
-| Publicador cae tras la confirmación, antes de marcar | La fila se publica de nuevo | Mensaje duplicado, absorbido por el worker |
-| Worker cae antes del ACK | El broker reentrega | Sin pérdida y sin duplicado |
-| Falla transitoria (p. ej. base no disponible) | `nack` → cola de espera → reintento; intentos contados en la base | Se recupera dentro de `MAX_ATTEMPTS = 3` |
-| Falla permanente o intentos agotados | `FAILED` con el error guardado, mensaje a la DLQ, ACK | El resto del lote sigue avanzando |
+Cada punto de corte tiene un comportamiento definido. Si la API cae antes del commit, no se creó nada y el operador reintenta con la misma clave. Con el broker caído, las filas esperan en el outbox. Si el publicador cae entre la confirmación y la marca, o el worker antes del ACK, el mensaje se entrega de nuevo y la idempotencia lo absorbe. Una falla transitoria vuelve por la cola de espera hasta `MAX_ATTEMPTS = 3`. Una permanente queda `FAILED` con su error, va a la DLQ y el resto del lote sigue avanzando.
 
-Para demostrar estos casos sin depender del azar, el worker admite una **inyección de fallos determinista** (`FAULT_INJECTION=transient:n` o `permanent:<email>`), y cada escenario es un script repetible que detiene servicios reales con Docker Compose y verifica el estado final en la base y en el broker.
+Para demostrar estos casos sin depender del azar, el worker admite una **inyección de fallos determinista** (`FAULT_INJECTION=transient:n` o `permanent:<email>`). Cada escenario es un script repetible que detiene servicios reales con Docker Compose y verifica el estado final en la base y en el broker (resultados en §5.1).
 
 ---
 
@@ -172,7 +169,7 @@ Corrida integrada del 16/11/2026 con Docker Compose local: los diez escenarios t
 | Falla transitoria / permanente | Dos trabajos reintentados terminaron emitidos; fallo permanente aislado: 19 ISSUED, 1 FAILED visible y mensaje en DLQ, sin descarga del fallido |
 | Verificación: original, alterado, inexistente, registro caído | VALID, ALTERED y NOT_FOUND respectivamente; PostgreSQL detenido devolvió 503; al volver recuperó VALID |
 | Permisos del alumno y datos de la consulta pública | Descarga propia permitida, ajena rechazada, acciones de operador prohibidas y consulta pública sin email ni nota |
-| Despliegue en la nube y consumo de memoria | ⟨PENDIENTE: proveedor, tamaño de VM, `docker stats` durante un lote⟩ |
+| Despliegue en la nube (Azure, 2 vCPU, 4 GiB) | Los diez escenarios PASS dentro de la VM; pico de memoria 1108 MB de 3856 MB (29 %); tras reiniciar la VM los servicios volvieron solos en unos 25 s, sin pérdida de datos |
 
 ### 5.2 Limitaciones
 
@@ -181,7 +178,7 @@ Corrida integrada del 16/11/2026 con Docker Compose local: los diez escenarios t
 - **Un solo worker.** El diseño admite más consumidores, pero no se midió escalado horizontal.
 - **Nodo único.** RabbitMQ, PostgreSQL y la aplicación corren en una sola VM: es un punto único de falla. La replicación (colas *quorum*, réplicas de base) queda fuera del alcance.
 - **Sin medición de beneficios de negocio.** Las reducciones de costo y tiempo del caso de negocio son hipótesis; la PoC mide comportamiento técnico.
-- ⟨PENDIENTE: transporte HTTP o HTTPS en la VM, según §cloud⟩
+- **Sin TLS en la nube.** La VM no tiene dominio y se accede por HTTP; las credenciales de demo son sintéticas.
 
 ### 5.3 Recursos y tiempo
 
@@ -190,7 +187,7 @@ Corrida integrada del 16/11/2026 con Docker Compose local: los diez escenarios t
 | Equipo | 4 integrantes con dedicación parcial, divididos en frentes: frontend; API y publicación; worker y verificación; infraestructura y documentación |
 | Plazo | 05/11 a 19/11/2026 (dos semanas), con integración por contratos acordados el primer día |
 | Esfuerzo | ⟨PENDIENTE: horas-persona reales por frente⟩ |
-| Infraestructura | Docker Compose; una VM ⟨PENDIENTE: proveedor y tamaño⟩ con crédito educativo, sin costo |
+| Infraestructura | Docker Compose; una VM Azure for Students (Chile Central, `Standard_B2als_v2`: 2 vCPU, 4 GiB), unos USD 38 por mes cubiertos por crédito educativo |
 | Presupuesto monetario | USD 0 |
 
 ### 5.4 Evolución posible
