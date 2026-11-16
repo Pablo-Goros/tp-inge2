@@ -183,3 +183,11 @@ describe('llamadas públicas', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('nota final', () => {
+  it('no se renderiza en /verify aunque el objeto la traiga', async () => {
+    renderAt('/verify/c7f3a9e2', fake({ getPublicCertificate: vi.fn(async () => ({ ...CERT, final_grade: 9.5 }) as PublicCertificate) }));
+    await screen.findByText('Camila Ferreyra');
+    expect(document.body.textContent).not.toMatch(/9[.,]5|nota/i);
+  });
+});

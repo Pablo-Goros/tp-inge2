@@ -23,9 +23,18 @@ export class ApiError extends Error {
     this.details = details;
   }
 
-  /** Filas con problema del CSV (solo en VALIDATION_ERROR de createBatch). */
-  get csvIssues(): CsvIssue[] {
+  private issues(): CsvIssue[] {
     return this.code === 'VALIDATION_ERROR' ? (this.details as CsvIssue[]).filter((d) => d && typeof d === 'object' && 'row' in d) : [];
+  }
+
+  /** Filas con problema del CSV (row >= 1; solo en VALIDATION_ERROR de createBatch). */
+  get csvIssues(): CsvIssue[] {
+    return this.issues().filter((d) => d.row > 0);
+  }
+
+  /** Errores del archivo completo (row 0: UNKNOWN_COLUMN, EMPTY_FILE, FILE_TOO_LARGE…). */
+  get csvFileIssues(): CsvIssue[] {
+    return this.issues().filter((d) => d.row === 0);
   }
 }
 

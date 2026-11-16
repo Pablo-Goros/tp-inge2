@@ -7,3 +7,8 @@ export function parseDisplayDate(s: string): string | null {
   if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return null;
   return `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
+
+/** Fecha de hoy (YYYY-MM-DD) en America/Argentina/Buenos_Aires: la que usa el backend para rechazar fechas futuras. */
+export function todayBuenosAires(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(now);
+}

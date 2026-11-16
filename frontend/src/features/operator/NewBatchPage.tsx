@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiError, type CsvIssue } from '../../api';
-import { Button, Card, Field, formatSize } from '../../components/ui';
+import { Alert, Button, Card, Field, formatSize } from '../../components/ui';
 import { CSV_EXAMPLE_FILENAME, CSV_EXAMPLE_HREF, CSV_HELP } from '../../config/pending';
 import { useApi } from '../session/AuthProvider';
 import { inspectCsv, newIdempotencyKey } from './csvFile';
 import { CsvRejection } from './CsvRejection';
-import { parseDisplayDate } from './dates';
+import { describeIssue } from './csvIssues';
+import { parseDisplayDate, todayBuenosAires } from './dates';
 import './operator.css';
 
 type Phase =
   | { s: 'idle' }
   | { s: 'sending' }
   | { s: 'rejected'; issues: CsvIssue[] }
+  | { s: 'fileError'; message: string }
   | { s: 'network' }
   | { s: 'conflict' }
   | { s: 'error'; message: string };
@@ -78,6 +80,8 @@ export function NewBatchPage() {
       if (!alive.current) return;
       if (e instanceof ApiError && e.code === 'VALIDATION_ERROR' && e.csvIssues.length > 0) {
         setPhase({ s: 'rejected', issues: e.csvIssues });
+      } else if (e instanceof ApiError && e.code === 'VALIDATION_ERROR' && e.csvFileIssues.length > 0) {
+        setPhase({ s: 'fileError', message: describeIssue(e.csvFileIssues[0].reason) }); // row 0: error del archivo, no de filas
       } else if (e instanceof ApiError && e.code === 'VALIDATION_ERROR') {
         setPhase({ s: 'error', message: e.message });
       } else if (e instanceof ApiError && e.code === 'IDEMPOTENCY_CONFLICT') {
@@ -102,6 +106,7 @@ export function NewBatchPage() {
     else {
       date = parseDisplayDate(dateText);
       if (!date) next.date = 'Ingresá una fecha válida con formato dd/mm/aaaa.';
+      else if (date > todayBuenosAires()) next.date = 'La fecha no puede ser futura.';
     }
     if (!picked) next.file = errors.file ?? 'Elegí un archivo CSV.';
     setErrors(next);
@@ -143,6 +148,13 @@ export function NewBatchPage() {
               <span>El sistema reconoció la solicitud anterior y no emitió nada con este intento. Revisá los datos y volvé a emitir.</span>
             </div>
           </div>
+        </div>
+      )}
+      {phase.s === 'fileError' && (
+        <div {...noticeProps}>
+          <Alert tone="error" title="Se rechazó el archivo, no se emitió nada">
+            {phase.message}. Corregí el archivo, elegí otro archivo y reenviá.
+          </Alert>
         </div>
       )}
       {phase.s === 'error' && (

@@ -78,6 +78,8 @@ describe('describeIssue / fechas', () => {
     expect(describeIssue('DUPLICATE_IN_FILE')).toBe('Email repetido en el archivo');
     expect(describeIssue('ALREADY_REQUESTED')).toBe('Ya existe un certificado para este alumno, curso y fecha');
     expect(describeIssue('INVALID_EMAIL')).toBe('Email mal formado');
+    expect(describeIssue('INVALID_GRADE')).toBe('Nota final inválida (0-10, hasta dos decimales)');
+    expect(describeIssue('UNKNOWN_COLUMN')).toBe('Columna no reconocida (solo email y final_grade)');
     expect(describeIssue('OTRO')).toBe('Problema en la fila');
   });
   it('dd/mm/aaaa → YYYY-MM-DD, rechaza fechas inexistentes', () => {
@@ -223,6 +225,44 @@ describe('nuevo lote', () => {
     expect(router.state.location.pathname).toBe('/operator/batches/new');
   });
 
+  it('error de archivo (row 0): muestra un Alert con el motivo y no la tabla "N de M filas"', async () => {
+    const createBatch = vi.fn().mockRejectedValue(new ApiError(400, 'VALIDATION_ERROR', 'CSV inválido', [{ row: 0, reason: 'UNKNOWN_COLUMN' }]));
+    renderAt(fake({ createBatch }), '/operator/batches/new');
+    const u = user();
+    await fill(u, csv('alumnos.csv', 5));
+    await submit(u);
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Columna no reconocida (solo email y final_grade)');
+    expect(screen.queryByRole('table', { name: 'Filas con problemas' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/filas tienen problemas/)).not.toBeInTheDocument();
+  });
+
+  it('fecha futura no llama a la API', async () => {
+    const createBatch = vi.fn();
+    renderAt(fake({ createBatch }), '/operator/batches/new');
+    const u = user();
+    await u.type(screen.getByLabelText('Nombre del curso'), 'Curso');
+    await u.type(screen.getByLabelText('Fecha de finalización'), '01/01/2999');
+    await u.upload(screen.getByLabelText('Archivo CSV'), csv());
+    await screen.findByText('alumnos.csv');
+    await submit(u);
+    expect(screen.getByText('La fecha no puede ser futura.')).toBeInTheDocument();
+    expect(createBatch).not.toHaveBeenCalled();
+  });
+
+  it('valida el archivo: más de 1 MB, sin filas de datos y línea vacía intermedia', async () => {
+    renderAt(fake({ createBatch: vi.fn() }), '/operator/batches/new');
+    const u = user();
+    const big = new File(['email\n'], 'grande.csv', { type: 'text/csv' });
+    Object.defineProperty(big, 'size', { value: 1_048_577 });
+    await u.upload(screen.getByLabelText('Archivo CSV'), big);
+    expect(await screen.findByText('El archivo supera 1 MB')).toBeInTheDocument();
+    await u.upload(screen.getByLabelText('Archivo CSV'), new File(['email\n'], 'vacio.csv', { type: 'text/csv' }));
+    expect(await screen.findByText('El archivo no tiene filas de datos')).toBeInTheDocument();
+    await u.upload(screen.getByLabelText('Archivo CSV'), new File(['email\na@x.com\n\nb@x.com\n'], 'huecos.csv', { type: 'text/csv' }));
+    expect(await screen.findByText(/3 filas/)).toBeInTheDocument();
+  });
+
   it('409 IDEMPOTENCY_CONFLICT muestra un mensaje claro', async () => {
     renderAt(fake({ createBatch: vi.fn().mockRejectedValue(new ApiError(409, 'IDEMPOTENCY_CONFLICT', 'x')) }), '/operator/batches/new');
     const u = user();
@@ -267,6 +307,16 @@ describe('detalle de lote', () => {
     expect(rows[4]).toContain('Alumno 1');
     expect(rows[4]).toContain('aaaaaaaa');
     expect(rows[5]).toContain('Alumno 2');
+  });
+
+  it('columna Nota: 2 decimales o "—" si falta', async () => {
+    const items = [item(1, 'ISSUED', { attempts: 1, final_grade: 9.5 }), item(2, 'PENDING', { final_grade: null })];
+    renderAt(fake({ getBatch: vi.fn(async () => detail(items)) }), '/operator/batches/7f3a-bbbb');
+    await screen.findByRole('table');
+    const table = screen.getByRole('table');
+    expect(within(table).getByRole('columnheader', { name: 'Nota' })).toBeInTheDocument();
+    const cells = within(table).getAllByRole('row').slice(1).map((r) => within(r).getAllByRole('cell')[3]?.textContent);
+    expect(cells).toEqual(['9.50', '—']);
   });
 
   it('sin created_at no muestra "creado"', async () => {
