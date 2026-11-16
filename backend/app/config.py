@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     init_timeout_seconds: int = 60
     bcrypt_rounds: int = 12
     poll_interval_seconds: float = 1.0
+    google_client_id: str = ""
 
     @field_validator("jwt_secret")
     @classmethod

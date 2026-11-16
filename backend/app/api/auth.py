@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.api import google_auth
 from app.api.errors import forbidden, unauthenticated
 from app.api.schemas import ErrorResponse
 from app.config import get_settings
@@ -46,6 +47,10 @@ class LoginResponse(BaseModel):
     name: str
 
 
+class GoogleLoginRequest(BaseModel):
+    credential: str
+
+
 def create_token(user: User) -> str:
     claims = {
         "sub": str(user.id),
@@ -68,6 +73,22 @@ def login(body: LoginRequest, session: Session = Depends(get_session)):
     except ValueError:  # contraseña >72 bytes o hash almacenado malformado
         ok = False
     if not ok:
+        raise unauthenticated("Credenciales inválidas")
+    return LoginResponse(access_token=create_token(user), role=user.role, name=user.name)
+
+
+@router.post(
+    "/google",
+    response_model=LoginResponse,
+    responses={400: {"model": ErrorResponse}, 401: {"model": ErrorResponse}},
+)
+def login_google(body: GoogleLoginRequest, session: Session = Depends(get_session)):
+    try:
+        email = google_auth.verify_google_id_token(body.credential, get_settings().google_client_id)
+    except google_auth.InvalidGoogleToken:
+        raise unauthenticated("Credenciales inválidas") from None
+    user = session.scalar(select(User).where(User.email == normalize_email(email)))
+    if user is None:
         raise unauthenticated("Credenciales inválidas")
     return LoginResponse(access_token=create_token(user), role=user.role, name=user.name)
 

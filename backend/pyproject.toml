@@ -12,7 +12,7 @@ dependencies = [
   "pydantic==2.14.3",
   "pydantic-settings==2.16.2",
   "bcrypt==5.0.0",
-  "pyjwt==2.15.1",
+  "pyjwt[crypto]==2.15.1",
   "python-multipart==0.0.33",
   "reportlab==5.1.0",
   "qrcode[pil]==8.2",

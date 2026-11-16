@@ -49,6 +49,7 @@ docs/
 | `POLL_INTERVAL_SECONDS` | Espera del publicador cuando no hay filas pendientes, por defecto `1.0` |
 | `INIT_TIMEOUT_SECONDS` | Plazo total de `init` para alcanzar PostgreSQL y RabbitMQ, por defecto `60` |
 | `BCRYPT_ROUNDS` | Costo de bcrypt al sembrar cuentas, por defecto `12` (las pruebas usan `4`) |
+| `GOOGLE_CLIENT_ID` | Client ID OAuth de Google para `POST /api/auth/google`; vacío desactiva el login con Google (401) |
 | `FAULT_INJECTION` | Lista de fallos controlados para la demo (ver §8); vacía por defecto |
 
 ## 2. Autenticación y roles
@@ -56,6 +57,7 @@ docs/
 **[Decisión propuesta]** Email + contraseña, cuentas precargadas, token JWT.
 
 - `POST /api/auth/login` con `{ "email": "...", "password": "..." }` → `200 { "access_token": "<jwt>", "role": "operator" | "student", "name": "..." }`. Credenciales inválidas: `401`.
+- `POST /api/auth/google` con `{ "credential": "<ID token de Google>" }` → `200` con el mismo cuerpo que `/auth/login`. El backend verifica el ID token (firma RS256 con las claves de Google, `aud` = `GOOGLE_CLIENT_ID`, `iss` de Google, `exp`, `email_verified` verdadero) y busca al usuario por el email normalizado; no crea cuentas. Token inválido, email no verificado, email sin cuenta o `GOOGLE_CLIENT_ID` vacío: `401` con el mismo cuerpo que credenciales inválidas (no revela si el email existe). Cuerpo mal formado: `400`. Variable: `GOOGLE_CLIENT_ID` (vacía por defecto).
 - JWT HS256, claims `sub` (id de usuario), `role`, `exp` (8 h). Cabecera `Authorization: Bearer <jwt>`.
 - Contraseñas almacenadas con bcrypt. Datos sintéticos; sin registro ni recuperación de contraseña.
 - Rutas `/api/verify/*` son públicas. Todas las demás exigen token; el rol se comprueba en el backend, nunca solo en el frontend.
@@ -155,6 +157,7 @@ Prefijo `/api`. JSON salvo donde se indica. Errores con formato único:
 | Método y ruta | Rol | Propósito |
 | --- | --- | --- |
 | `POST /auth/login` | público | Ver §2 |
+| `POST /auth/google` | público | Ver §2 |
 | `POST /batches` | operator | Aceptar un lote |
 | `GET /batches` | operator | Listar lotes propios, más recientes primero (máx. 100). Cada elemento: `{ batch_id, course_name, completion_date, status, total, counts{pending,processing,issued,failed}, created_at }` |
 | `GET /batches/{id}` | operator | Avance y detalle por alumno |
