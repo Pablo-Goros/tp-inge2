@@ -1,4 +1,4 @@
-// Tipos según docs/contracts.md §5. Ver docs/frontend-api.md para las diferencias pedidas al equipo.
+// Tipos según docs/contracts.md §5. Ver docs/frontend-api.md. `institution?`, `issued_at?`, `created_at?` y `sha256?` están confirmados como ausentes en main; el frontend los trata como opcionales.
 export type Role = 'operator' | 'student';
 
 export interface SessionUser {
@@ -39,6 +39,8 @@ export interface BatchItem {
   status: CertStatus;
   attempts: number;
   last_error: string | null;
+  /** Nota final 0-10 (backend: BatchItem.final_grade); null o ausente si no se cargó. */
+  final_grade?: number | null;
 }
 
 export interface BatchDetail {
@@ -48,15 +50,23 @@ export interface BatchDetail {
   status: BatchStatus;
   counts: Required<BatchCounts>;
   items: BatchItem[];
-  created_at?: string; // TODO(equipo): no está en contracts §5
+  created_at?: string; // confirmado ausente en main (no está en contracts §5)
 }
 
-export type CsvIssueReason = 'NO_ACCOUNT' | 'DUPLICATE_IN_FILE' | 'ALREADY_REQUESTED' | 'INVALID_EMAIL';
+/** Motivos por fila (row >= 1). */
+export type CsvIssueReason =
+  | 'NO_ACCOUNT' | 'DUPLICATE_IN_FILE' | 'ALREADY_REQUESTED' | 'INVALID_EMAIL' | 'EMPTY_ROW' | 'INVALID_FIELD_COUNT' | 'INVALID_GRADE';
+
+/** Motivos de archivo completo (row = 0, sin email). */
+export type CsvFileReason =
+  | 'EMPTY_FILE' | 'INVALID_ENCODING' | 'MALFORMED_CSV' | 'MISSING_EMAIL_COLUMN' | 'DUPLICATE_COLUMN' | 'UNKNOWN_COLUMN'
+  | 'NO_DATA_ROWS' | 'TOO_MANY_ROWS' | 'FILE_TOO_LARGE';
 
 export interface CsvIssue {
+  /** 0 = error del archivo (no de una fila). */
   row: number;
-  email: string;
-  reason: CsvIssueReason;
+  email?: string;
+  reason: CsvIssueReason | CsvFileReason;
 }
 
 export interface CertificateItem {
@@ -64,7 +74,7 @@ export interface CertificateItem {
   course_name: string;
   completion_date: string;
   issued_at: string;
-  institution?: string; // TODO(equipo): no está en contracts §5
+  institution?: string; // confirmado ausente en main (no está en contracts §5)
 }
 
 export interface PublicCertificate {
@@ -74,7 +84,7 @@ export interface PublicCertificate {
   institution: string;
   course_name: string;
   completion_date: string;
-  issued_at?: string; // TODO(equipo): no está en contracts §5
+  issued_at?: string; // confirmado ausente en main (no está en contracts §5)
 }
 
 export type VerifyOutcome = 'VALID' | 'ALTERED' | 'NOT_FOUND' | 'UNAVAILABLE';
@@ -173,6 +183,6 @@ export interface CertificateDetail {
   issued_at: string;
   institution?: string;
   verifyUrl: string;
-  sha256?: string; // TODO(equipo): hash del PDF registrado; el contrato aún no lo expone
+  sha256?: string; // confirmado ausente en main: el backend no expone el hash
   student_name?: string;
 }

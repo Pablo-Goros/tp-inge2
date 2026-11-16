@@ -1,10 +1,10 @@
 import { ApiError, type ApiClient, type CreateBatchInput, type CreateBatchResult } from '../ApiClient';
 import { getToken } from '../token';
 import type {
-  BatchDetail, BatchItem, BatchStatus, BatchSummary, CertificateDetail, CertificateItem, LoginResponse, Profile, ProfileSummary,
+  BatchDetail, BatchItem, BatchStatus, BatchSummary, CertificateDetail, CertificateItem, CsvIssue, LoginResponse, Profile, ProfileSummary,
   PublicCertificate, Role, VerifyOutcome,
 } from '../types';
-import { parseCsv, readText, REJECTED_SAMPLE, validateRows } from './csv';
+import { isValidGrade, parseCsv, readText, REJECTED_SAMPLE, validateRows } from './csv';
 import {
   DEMO_PASSWORD, INSTITUTION, normalizeCourse, seedBatches, studentEmail, studentName, USERS, type MockBatch, type MockUser,
 } from './data';
@@ -24,6 +24,8 @@ export interface MockOptions {
 }
 
 const PAGE_SIZE = 12;
+/** Fecha de hoy (YYYY-MM-DD) en America/Argentina/Buenos_Aires. */
+const todayBuenosAires = (ms: number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date(ms));
 const norm = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const TOKEN_PREFIX = 'mock:';
 const uuid = () =>
@@ -72,7 +74,7 @@ export function createMockClient(opts: MockOptions = {}): ApiClient {
     const issued = issuedNow(b, sc);
     let k = 0;
     return b.students.map((n, i): BatchItem => {
-      const base = { certificate_id: certId(b, n), student_name: studentName(n), student_email: studentEmail(n) };
+      const base = { certificate_id: certId(b, n), student_name: studentName(n), student_email: studentEmail(n), final_grade: b.grades?.[i] ?? null };
       if (b.failed.includes(i)) return { ...base, status: 'FAILED', attempts: 3, last_error: 'No se pudo generar el PDF.' };
       const rank = k++;
       if (rank < issued) return { ...base, status: 'ISSUED', attempts: 1, last_error: null };
@@ -113,6 +115,7 @@ export function createMockClient(opts: MockOptions = {}): ApiClient {
       const course = courseName.trim();
       if (!course || course.length > 200) throw new ApiError(400, 'VALIDATION_ERROR', 'El nombre del curso debe tener entre 1 y 200 caracteres.');
       if (!/^\d{4}-\d{2}-\d{2}$/.test(completionDate)) throw new ApiError(400, 'VALIDATION_ERROR', 'La fecha debe tener formato AAAA-MM-DD.');
+      if (completionDate > todayBuenosAires(now())) throw new ApiError(400, 'VALIDATION_ERROR', 'La fecha no puede ser futura.');
       const text = await readText(file);
       const fingerprint = [normalizeCourse(course), completionDate, text].join('\u0000');
       const prev = idem.get(idempotencyKey);
@@ -121,17 +124,20 @@ export function createMockClient(opts: MockOptions = {}): ApiClient {
         return prev.result;
       }
       if (sc.has('csv-reject')) throw new ApiError(400, 'VALIDATION_ERROR', 'El CSV tiene filas con problemas.', REJECTED_SAMPLE);
-      const emails = parseCsv(text);
+      const rows = parseCsv(text);
+      const emails = rows.map((r) => r.email);
       const key = normalizeCourse(course);
-      const issues = validateRows(
+      const emailIssues = validateRows(
         emails,
         (e) => USERS.some((u) => u.role === 'student' && u.email === e),
         (e) => batches.some((b) => normalizeCourse(b.course) === key && b.date === completionDate && b.students.some((n) => studentEmail(n) === e)),
       );
+      const gradeIssues: CsvIssue[] = rows.flatMap((r, i) => (r.grade && !isValidGrade(r.grade) ? [{ row: i + 1, email: r.email, reason: 'INVALID_GRADE' as const }] : []));
+      const issues = [...gradeIssues, ...emailIssues].sort((a, b) => a.row - b.row); // como el backend: por fila
       if (issues.length) throw new ApiError(400, 'VALIDATION_ERROR', 'El CSV tiene filas con problemas.', issues);
       const batch: MockBatch = {
         id: uuid(), course, date: completionDate, created: new Date(now()).toISOString(),
-        students: emails.map((e) => Number(e.slice(6, 8))), failed: [], baseIssued: 0, live: true, startedAt: now(),
+        students: emails.map((e) => Number(e.slice(6, 8))), grades: rows.map((r) => (r.grade ? Number(r.grade) : null)), failed: [], baseIssued: 0, live: true, startedAt: now(),
       };
       batches.unshift(batch);
       const result: CreateBatchResult = { batch_id: batch.id, status: 'IN_PROGRESS', total: emails.length };

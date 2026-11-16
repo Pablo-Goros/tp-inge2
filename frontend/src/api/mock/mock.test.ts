@@ -35,9 +35,43 @@ describe('createBatch', () => {
     expect((await api.listBatches()).length).toBe(before);
   });
 
-  it('acepta columnas nombre+email', async () => {
-    const r = await mk().createBatch({ courseName: 'X', completionDate: '2026-11-01', file: csv(['Ana,alumno10@demo.test'], 'nombre,email'), idempotencyKey: 'k3' });
+  it('acepta email+final_grade y rechaza cabeceras desconocidas con UNKNOWN_COLUMN (fila 0)', async () => {
+    const r = await mk().createBatch({ courseName: 'X', completionDate: '2026-11-01', file: csv(['alumno10@demo.test,9.50'], 'email,final_grade'), idempotencyKey: 'k3' });
     expect(r.total).toBe(1);
+    const err = await mk()
+      .createBatch({ courseName: 'X', completionDate: '2026-11-01', file: csv(['Ana,alumno10@demo.test'], 'nombre,email'), idempotencyKey: 'k4' })
+      .then(() => { throw new Error('debía rechazar'); }, (e: ApiError) => e);
+    expect(err).toMatchObject({ status: 400, code: 'VALIDATION_ERROR' });
+    expect(err.details[0]).toMatchObject({ row: 0, reason: 'UNKNOWN_COLUMN' });
+  });
+
+  it('final_grade: 9.5, vacía y 10 pasan; 10.01 y abc dan INVALID_GRADE', async () => {
+    const api = mk();
+    const bad = await api
+      .createBatch({
+        courseName: 'Notas', completionDate: '2026-11-01', idempotencyKey: 'k5',
+        file: csv(['alumno10@demo.test,9.5', 'alumno11@demo.test,', 'alumno12@demo.test,10', 'alumno13@demo.test,10.01', 'alumno14@demo.test,abc'], 'email,final_grade'),
+      })
+      .then(() => { throw new Error('debía rechazar'); }, (e: ApiError) => e);
+    expect(bad.csvIssues.map((i) => [i.row, i.reason])).toEqual([[4, 'INVALID_GRADE'], [5, 'INVALID_GRADE']]);
+    const ok = await api.createBatch({
+      courseName: 'Notas', completionDate: '2026-11-01', idempotencyKey: 'k6',
+      file: csv(['alumno10@demo.test,9.5', 'alumno11@demo.test,', 'alumno12@demo.test,10'], 'email,final_grade'),
+    });
+    const d = await api.getBatch(ok.batch_id);
+    expect(d.items.map((i) => i.final_grade)).toEqual([9.5, null, 10]);
+  });
+
+  it('dos emails sin cuenta repetidos dan NO_ACCOUNT en ambas filas (orden del backend)', async () => {
+    const err = await mk()
+      .createBatch({ courseName: 'Z', completionDate: '2026-11-01', file: csv(['nadie@demo.test', 'nadie@demo.test']), idempotencyKey: 'k7' })
+      .then(() => { throw new Error('debía rechazar'); }, (e: ApiError) => e);
+    expect(err.csvIssues.map((i) => i.reason)).toEqual(['NO_ACCOUNT', 'NO_ACCOUNT']);
+  });
+
+  it('rechaza fecha futura', async () => {
+    await expect(mk().createBatch({ courseName: 'X', completionDate: '2999-01-01', file: csv(['alumno10@demo.test']), idempotencyKey: 'k8' }))
+      .rejects.toMatchObject({ status: 400, code: 'VALIDATION_ERROR' });
   });
 });
 

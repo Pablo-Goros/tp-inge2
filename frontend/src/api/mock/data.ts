@@ -30,6 +30,8 @@ export interface MockBatch {
   created: string; // ISO
   /** Números de alumno (1..60) de cada ítem. */
   students: number[];
+  /** Nota final por alumno (paralela a `students`); ausente = sin notas. */
+  grades?: (number | null)[];
   /** Índices (dentro de students) con falla permanente. */
   failed: number[];
   /** Cuántos no fallidos ya están emitidos al arrancar; el resto avanza con el tiempo si `live`. */
