@@ -100,12 +100,9 @@ services:
       postgres: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
 
-  # PLACEHOLDER hasta que el frente C entregue app/entrypoints/worker.py.
-  # Cuando exista: borrar `entrypoint` y dejar `command: ["app.entrypoints.worker"]`.
   worker:
     <<: *backend
-    entrypoint: ["sh", "-c", "echo 'worker placeholder: falta app.entrypoints.worker (frente C)'; exec sleep infinity"]
-    command: []
+    command: ["app.entrypoints.worker"]
     restart: unless-stopped
     depends_on:
       init: { condition: service_completed_successfully }

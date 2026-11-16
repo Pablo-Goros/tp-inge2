@@ -14,10 +14,10 @@ def test_request_validation_error_is_400_envelope(client):
     assert isinstance(err["details"], list) and err["details"]
 
 
-def test_public_verification_without_c_returns_unavailable(client):
+def test_public_verification_unknown_identifier_returns_not_found(client):
     r = client.get("/api/verify/00000000-0000-0000-0000-000000000000")
-    assert r.status_code == 503
-    assert r.json()["error"]["code"] == "UNAVAILABLE"
+    assert r.status_code == 404
+    assert r.json()["error"]["code"] == "NOT_FOUND"
 
 
 def test_method_not_allowed_is_http_error_envelope(client):

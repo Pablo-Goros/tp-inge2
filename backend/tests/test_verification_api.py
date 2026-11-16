@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from app.api.main import create_app
-from app.api.verification import RegisteredCertificate, VerificationUnavailable, get_verification
+from app.api.verification import RegisteredCertificate, UnavailableVerification, VerificationUnavailable, get_verification
 
 CERT_ID = uuid.UUID('f4b70a9e-bede-41c3-a582-56e1270a2e19')
 
@@ -24,8 +24,8 @@ class Verification:
 
 def public_client(service=None):
     app = create_app()
-    if service is not None:
-        app.dependency_overrides[get_verification] = lambda: service
+    # Isolated HTTP tests explicitly replace C; production now uses the real registry.
+    app.dependency_overrides[get_verification] = lambda: service if service is not None else UnavailableVerification()
     return TestClient(app)
 
 

@@ -77,3 +77,55 @@ def clear_settings_cache():
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
+
+
+@pytest.fixture
+def issuance_db(engine):
+    """Committed data for issuance phases using independent DB connections."""
+    import datetime as dt
+    import uuid
+    from sqlalchemy.orm import sessionmaker
+    from app.infrastructure.models import Batch, CertRequest, Institution, Outbox, User
+    from app.api.auth import hash_password
+
+    require_test_db()
+    factory = sessionmaker(engine, expire_on_commit=False)
+    password_hash = hash_password("demo1234", rounds=4)
+
+    def clean():
+        with engine.begin() as conn:
+            conn.execute(text("TRUNCATE registry, institutions CASCADE"))
+
+    clean()
+
+    def make(count=1, final_grade=None):
+        with factory() as s, s.begin():
+            institution = Institution(name="Institución de prueba")
+            s.add(institution)
+            s.flush()
+            operator = User(institution_id=institution.id, email=f"{uuid.uuid4()}@demo.test",
+                            name="Operador", password_hash=password_hash, role="operator")
+            s.add(operator)
+            s.flush()
+            batch = Batch(operator_id=operator.id, course_name="Programación avanzada",
+                          completion_date=dt.date(2026, 10, 30), idempotency_key=str(uuid.uuid4()),
+                          request_fingerprint="fixture")
+            s.add(batch)
+            s.flush()
+            ids = []
+            for index in range(count):
+                student = User(institution_id=institution.id, email=f"alumno{index + 1:02}@demo.test",
+                               name=f"Alumno Ñandú {index + 1}", password_hash=password_hash, role="student")
+                s.add(student)
+                s.flush()
+                request = CertRequest(batch_id=batch.id, student_id=student.id,
+                                      course_key="programación avanzada", completion_date=batch.completion_date,
+                                      final_grade=final_grade)
+                s.add(request)
+                s.flush()
+                s.add(Outbox(request_id=request.id))
+                ids.append(request.id)
+        return ids
+
+    yield factory, make
+    clean()
