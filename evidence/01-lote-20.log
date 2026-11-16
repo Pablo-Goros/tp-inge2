@@ -1,0 +1,7 @@
+# 2026-11-15T02:51:02Z · commit ce3efd1 · http://localhost:8080
+== Escenario 01-lote-20
+-- 1. Subir lote-20.csv
+   ok    HTTP = 201
+   (aceptado en 42 ms, sin esperar la emisión)
+   PENDIENTE: requiere el worker real (frente C); hoy compose.yaml usa un placeholder
+== PENDIENTE 01-lote-20

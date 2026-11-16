@@ -1,0 +1,4 @@
+# 2026-11-15T02:51:03Z · commit ce3efd1 · http://localhost:8080
+== Escenario 02-worker-caido
+   PENDIENTE: requiere el worker real (frente C); hoy compose.yaml usa un placeholder
+== PENDIENTE 02-worker-caido

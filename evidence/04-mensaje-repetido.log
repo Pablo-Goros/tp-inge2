@@ -1,0 +1,16 @@
+# 2026-11-15T02:51:16Z · commit ce3efd1 · http://localhost:8080
+== Escenario 04-mensaje-repetido
+-- A1. Primer POST de lote-20.csv
+   ok    HTTP del primer POST = 201
+-- A2. Mismo POST, misma clave (simula un reintento por corte de conexión)
+   ok    HTTP del POST repetido = 200
+   ok    batch_id devuelto = 1ae43f15-b71a-487d-832d-33ee4118f7d4
+   ok    lotes en la base = 3
+   ok    solicitudes del lote = 20
+   ok    filas de outbox del lote = 20
+-- A3. Misma clave con otro contenido -> conflicto
+   ok    HTTP = 409
+   ok    error.code = IDEMPOTENCY_CONFLICT
+-- B. Reenviar a mano un mensaje ya emitido
+   PENDIENTE: requiere el worker real (frente C); hoy compose.yaml usa un placeholder
+== PENDIENTE 04-mensaje-repetido
