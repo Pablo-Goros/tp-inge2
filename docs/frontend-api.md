@@ -1,5 +1,7 @@
 # API que espera el frontend
 
+Estado: el cliente HTTP (`VITE_API=http`) todavía no se verificó de punta a punta contra el backend real; las rutas de perfiles no existen allí (ver «Perfiles»).
+
 Fuente: [contracts.md](contracts.md) §2 y §5. El cliente está definido en `frontend/src/api/ApiClient.ts` (mock en memoria por defecto; `VITE_API=http` usa `/api`).
 
 ## Endpoints
@@ -61,7 +63,7 @@ Sin sesión o con rol incorrecto en una ruta protegida: 403 en el lugar (sin red
 
 ## Perfiles (alumnos y tutores)
 
-> **PENDIENTE DE BACKEND (confirmado contra main):** `/me/profile`, `/me/profile/avatar`, `/profiles`, `/profiles/{slug}`, `/profiles/slug-available` y `GET /certificates/{id}` **no existen** en el backend; con `VITE_API=http` esas llamadas dan 404/405 y las pantallas de perfil, el directorio, la home de perfiles y el detalle de certificado muestran el estado de error. Solo funcionan con el mock (por defecto). Decisión: no se hace un cliente híbrido; queda pendiente de que el backend los implemente. TODO(equipo): el backend **aún no tiene** estos endpoints. El frontend los consume desde el mock (por defecto) o desde `/api` con `VITE_API=http`. "Tutor" en la UI = rol `operator` del sistema (no hay rol nuevo). El perfil es **siempre público**; no hay toggle público/privado.
+> **PENDIENTE DE BACKEND (confirmado contra main):** `/me/profile`, `/me/profile/avatar`, `/profiles`, `/profiles/{slug}`, `/profiles/slug-available` y `GET /certificates/{id}` **no existen** en el backend; con `VITE_API=http` esas llamadas dan 404/405 y las pantallas de perfil, el directorio, la home de perfiles y el detalle de certificado muestran el estado de error. Solo funcionan con el mock (por defecto). Decisión: no se hace un cliente híbrido; queda pendiente de que el backend los implemente. "Tutor" en la UI = rol `operator` del sistema (no hay rol nuevo). El perfil es **siempre público**; no hay toggle público/privado.
 
 | Endpoint | Auth | Notas |
 |---|---|---|
@@ -99,5 +101,5 @@ Salen de `grep -rn "TODO(equipo)" frontend/src`:
 | `src/api/types.ts` (`created_at`, `institution`, `issued_at`, `sha256`) | Campos que no están en contracts §5; el frontend los trata como opcionales. |
 | `src/api/mock/MockApiClient.ts`, `src/features/student/CertificateDetailPage.tsx` | Hash (`sha256`) real del PDF registrado; se muestra solo si el backend lo envía. |
 | `src/app/routes.tsx`, `src/features/verify/VerifyLookup.tsx` | Qué mostrar en `/verify` sin `cert_id`. |
-| `src/config/pending.ts` | Formato exacto del CSV (una columna `email` vs. `nombre`+`email`), ejemplo y texto de ayuda. |
+| `src/config/pending.ts` | Ejemplo y texto de ayuda definitivos del CSV (el formato `email` + `final_grade` ya coincide con el backend). |
 
