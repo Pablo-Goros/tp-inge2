@@ -13,7 +13,7 @@ interface Props {
 /** Paso de bienvenida: primer ingreso con Google de un email sin cuenta. Crea siempre una cuenta de alumno. */
 export function GoogleWelcome({ credential, loading, error, onConfirm, onCancel }: Props) {
   const [profile] = useState(() => decodeGoogleProfile(credential));
-  const [name, setName] = useState(profile.name ?? '');
+  const [name, setName] = useState((profile.name ?? '').slice(0, 100));
 
   function onSubmit(ev: FormEvent) {
     ev.preventDefault();

@@ -1,6 +1,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
+import { ApiError } from '../../api';
 import { createMockClient } from '../../api/mock/MockApiClient';
 import { clearSession, loadSession } from '../../api/token';
 import { buildRoutes } from '../../app/routes';
@@ -82,6 +83,34 @@ describe('login con Google', () => {
       await userEvent.type(name, 'Ana Nueva');
       await userEvent.click(screen.getByRole('button', { name: 'Crear mi cuenta de alumno' }));
       await waitFor(() => expect(router.state.location.pathname).toBe('/student/certificates'));
+      expect(loadSession()?.user.name).toBe('Ana Nueva');
+    });
+
+    async function toWelcomeFailing(err: ApiError, email: string) {
+      vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'cid.apps.googleusercontent.com');
+      const base = createMockClient({ latencyMs: 0, scenarios: () => new Set<string>() });
+      const client = { ...base, signupWithGoogle: () => Promise.reject(err) };
+      const router = createMemoryRouter(buildRoutes(client), { initialEntries: ['/login'] });
+      render(<RouterProvider router={router} />);
+      await waitFor(() => expect(gis.cb).toBeDefined());
+      gis.cb!({ credential: `mock-google:${email}` });
+      await screen.findByRole('heading', { name: '¡Bienvenido/a!' });
+      await userEvent.click(screen.getByRole('button', { name: 'Crear mi cuenta de alumno' }));
+      return router;
+    }
+
+    it('401 en el alta (token de Google vencido) vuelve al formulario con aviso claro', async () => {
+      const router = await toWelcomeFailing(new ApiError(401, 'UNAUTHENTICATED', 'x'), 'vencido@demo.test');
+      expect(await screen.findByRole('alert')).toHaveTextContent('Tu sesión de Google venció. Volvé a ingresar con Google.');
+      expect(screen.queryByText(/Email o contraseña incorrectos/)).toBeNull();
+      expect(screen.getByLabelText('Email')).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe('/login');
+    });
+
+    it('400 de validación en el alta muestra el límite del nombre', async () => {
+      await toWelcomeFailing(new ApiError(400, 'VALIDATION_ERROR', 'x'), 'largo@demo.test');
+      expect(await screen.findByRole('alert')).toHaveTextContent('El nombre debe tener hasta 100 caracteres.');
+      expect(screen.getByRole('heading', { name: '¡Bienvenido/a!' })).toBeInTheDocument();
     });
 
     it('Volver regresa al formulario sin sesión', async () => {

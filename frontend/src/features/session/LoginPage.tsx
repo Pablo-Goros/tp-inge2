@@ -10,6 +10,10 @@ const BAD_CREDS = 'Email o contraseña incorrectos. Revisá los datos e intentá
 
 const GOOGLE_UNAVAILABLE = 'No pudimos cargar el acceso con Google. Podés ingresar con email y contraseña.';
 
+const GOOGLE_EXPIRED = 'Tu sesión de Google venció. Volvé a ingresar con Google.';
+
+const NAME_TOO_LONG = 'El nombre debe tener hasta 100 caracteres.';
+
 function messageFor(e: unknown): string {
   if (e instanceof ApiError && e.code === 'UNAUTHENTICATED') return BAD_CREDS;
   if (e instanceof ApiError && e.code === 'NETWORK') return 'No pudimos conectar con el servidor. Revisá tu conexión e intentá de nuevo.';
@@ -65,7 +69,9 @@ export function LoginPage() {
       const u = await signupWithGoogle(welcome, name || undefined);
       navigate(homeFor(u.role), { replace: true });
     } catch (e) {
-      setError(messageFor(e));
+      if (e instanceof ApiError && e.status === 401) { setWelcome(null); setError(GOOGLE_EXPIRED); } // ID token vencido o Client ID distinto
+      else if (e instanceof ApiError && e.code === 'VALIDATION_ERROR') setError(NAME_TOO_LONG);
+      else setError(messageFor(e));
       setLoading(false);
     }
   }
