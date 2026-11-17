@@ -1,21 +1,8 @@
-<!--
-NOTA PARA EL EQUIPO (no se renderiza; borrar antes de entregar)
-- Borrador iniciado el 14/11/2026 (frente D). Límite: 5 páginas de cuerpo (secciones 1 a 5),
-  sin contar portada, índice ni anexos. El cuerpo apunta a unas 2300 palabras + 1 diagrama.
-- REGISTRO SIMULADO confirmado: C entregó SimulatedRegistry; blockchain no integra la entrega.
-- Todo lo marcado ⟨PENDIENTE⟩ se completa SOLO con resultados de evidence/. No inventar números.
-- Falta del grupo: nombre del grupo, integrantes, horas-persona por frente (§5.3).
-- Si el frontend React no llega, corregir §3 ("Un frontend React se sirve detrás de Nginx").
-- LARGO (medido el 16/11, A4, márgenes 2 cm, 11 pt): el cuerpo ocupa 5 páginas JUSTAS (~3 líneas
-  libres). Todo agregado obliga a recortar otra cosa. Al exportar el PDF final, revisar que el diagrama
-  mermaid renderizado no empuje el texto a una sexta página.
--->
-
 # Emisión y verificación de certificados académicos con procesamiento asincrónico confiable
 
 **White paper — Trabajo Práctico Integrador Final, Ingeniería de Software II, 2.º cuatrimestre 2026**
 
-Grupo: ⟨completar⟩ · Integrantes: ⟨completar⟩ · Fecha de entrega: 19/11/2026
+Grupo 3 · Integrantes: Mateo Arias, Manuel García Puente, Pablo Gorostiaga y Lucas Desmery · Fecha de entrega: 19/11/2026
 
 Eje técnico elegido: **RabbitMQ** (sistemas distribuidos, colas de mensajes).
 
@@ -186,7 +173,7 @@ Corrida integrada del 16/11/2026 con Docker Compose local: los diez escenarios t
 | --- | --- |
 | Equipo | 4 integrantes con dedicación parcial, divididos en frentes: frontend; API y publicación; worker y verificación; infraestructura y documentación |
 | Plazo | 05/11 a 19/11/2026 (dos semanas), con integración por contratos acordados el primer día |
-| Esfuerzo | ⟨PENDIENTE: horas-persona reales por frente⟩ |
+| Esfuerzo | 26 horas-persona en total: Mateo Arias 6, Manuel García Puente 6, Pablo Gorostiaga 7 y Lucas Desmery 7 |
 | Infraestructura | Docker Compose; una VM Azure for Students (Chile Central, `Standard_B2als_v2`: 2 vCPU, 4 GiB), unos USD 38 por mes cubiertos por crédito educativo |
 | Presupuesto monetario | USD 0 |
 
