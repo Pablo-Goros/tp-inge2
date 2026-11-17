@@ -12,7 +12,9 @@ npm run typecheck  # tsc --noEmit
 npm run build      # typecheck + vite build
 ```
 
-`VITE_API=http npm run dev` usa el backend real en `/api` en lugar del mock. Perfiles, directorio y detalle de certificado aún no existen en el backend: con `VITE_API=http` esas pantallas muestran error (ver `docs/frontend-api.md`).
+`VITE_API=http npm run dev` usa el backend real en `/api` en lugar del mock. En `docker compose up` el frontend ya se sirve así: `frontend/Dockerfile` compila con `VITE_API=http` y `frontend/nginx.conf` lo sirve en http://localhost:8080 y reenvía `/api`.
+
+Perfiles, directorio y detalle de certificado no existen en el backend, así que están ocultos por defecto (`src/config/features.ts`). Para verlos con el mock: `VITE_PROFILES=on` en `frontend/.env.local` (ver `docs/frontend-api.md`).
 
 Con `VITE_API=http` el backend debe estar arriba con `docker compose up -d --build`; el proxy de Vite apunta por defecto a http://localhost:8080 y se cambia con `VITE_PROXY_TARGET` (p. ej. http://localhost:8000 si corrés uvicorn directo).
 

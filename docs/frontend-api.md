@@ -1,6 +1,6 @@
 # API que espera el frontend
 
-Estado: el cliente HTTP (`VITE_API=http`) todavía no se verificó de punta a punta contra el backend real; las rutas de perfiles no existen allí (ver «Perfiles»).
+Estado: el cliente HTTP (`VITE_API=http`) se verificó de punta a punta contra el backend real el 17/11/2026 (operador, alumno y verificación pública, servidos por `docker compose up`). Las rutas de perfiles no existen en el backend y esas pantallas están ocultas por defecto (ver «Perfiles»).
 
 Fuente: [contracts.md](contracts.md) §2 y §5. El cliente está definido en `frontend/src/api/ApiClient.ts` (mock en memoria por defecto; `VITE_API=http` usa `/api`).
 
