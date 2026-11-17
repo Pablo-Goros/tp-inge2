@@ -38,9 +38,6 @@ const certId = (b: MockBatch, student: number) => b.id.slice(0, 24) + String(stu
 const mockTxHash = (id: string) =>
   '0x' + Array.from({ length: 32 }, (_, i) => ((id.charCodeAt(i % id.length) * 31 + i * 7) & 0xff).toString(16).padStart(2, '0')).join('');
 
-/** Email de una credencial `mock-google:<email>`; '' si no tiene ese formato. */
-const mockGoogleEmail = (c: string) => (c.startsWith('mock-google:') ? c.slice('mock-google:'.length).trim().toLowerCase() : '');
-
 export function createMockClient(opts: MockOptions = {}): ApiClient {
   const scenarios = opts.scenarios ?? readScenarios;
   const now = opts.now ?? Date.now;
@@ -113,27 +110,6 @@ export function createMockClient(opts: MockOptions = {}): ApiClient {
       await gate({ anonymous: true });
       const user = USERS.find((u) => u.email === email.trim().toLowerCase());
       if (!user || password !== DEMO_PASSWORD) throw new ApiError(401, 'UNAUTHENTICATED', 'Email o contraseña incorrectos.');
-      return { token: TOKEN_PREFIX + user.email, user: { name: user.name, role: user.role } };
-    },
-
-    async loginWithGoogle(credential): Promise<LoginResponse> {
-      await gate({ anonymous: true });
-      const email = mockGoogleEmail(credential);
-      if (!email) throw new ApiError(401, 'UNAUTHENTICATED', 'No pudimos validar tu cuenta de Google.');
-      const user = USERS.find((u) => u.email === email);
-      if (!user) throw new ApiError(404, 'NOT_FOUND', 'Todavía no tenés cuenta.');
-      return { token: TOKEN_PREFIX + user.email, user: { name: user.name, role: user.role } };
-    },
-
-    async signupWithGoogle(credential, name): Promise<LoginResponse> {
-      await gate({ anonymous: true });
-      const email = mockGoogleEmail(credential);
-      if (!email) throw new ApiError(401, 'UNAUTHENTICATED', 'No pudimos validar tu cuenta de Google.');
-      let user = USERS.find((u) => u.email === email); // existente: no cambia rol ni nombre
-      if (!user) {
-        user = { email, name: (name ?? '').trim().slice(0, 100) || email.split('@')[0], role: 'student' };
-        USERS.push(user);
-      }
       return { token: TOKEN_PREFIX + user.email, user: { name: user.name, role: user.role } };
     },
 

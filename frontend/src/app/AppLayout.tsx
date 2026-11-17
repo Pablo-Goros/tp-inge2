@@ -1,5 +1,6 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { LinkButton, Topbar, type NavItem } from '../components/ui';
+import { PROFILES_ENABLED } from '../config/features';
 import { homeFor, useAuth } from '../features/session/AuthProvider';
 
 const NAV: Record<'operator' | 'student', NavItem[]> = {
@@ -12,6 +13,8 @@ const NAV: Record<'operator' | 'student', NavItem[]> = {
     { to: '/profile', label: 'Mi perfil' }, { to: '/directory', label: 'Directorio' },
   ],
 };
+const PROFILE_NAV = new Set(['/profile', '/directory']);
+if (!PROFILES_ENABLED) for (const role of Object.keys(NAV) as (keyof typeof NAV)[]) NAV[role] = NAV[role].filter((i) => !PROFILE_NAV.has(i.to));
 const ROLE_LABEL = { operator: 'Operador', student: 'Alumno' };
 /** Rutas públicas que con sesión muestran la topbar de sesión y sin sesión la pública con "Ingresar". */
 const PUBLIC_PREFIXES = ['/verify', '/p/', '/directory'];

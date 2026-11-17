@@ -49,7 +49,6 @@ docs/
 | `POLL_INTERVAL_SECONDS` | Espera del publicador cuando no hay filas pendientes, por defecto `1.0` |
 | `INIT_TIMEOUT_SECONDS` | Plazo total de `init` para alcanzar PostgreSQL y RabbitMQ, por defecto `60` |
 | `BCRYPT_ROUNDS` | Costo de bcrypt al sembrar cuentas, por defecto `12` (las pruebas usan `4`) |
-| `GOOGLE_CLIENT_ID` | Client ID OAuth de Google para `POST /api/auth/google`; vacío desactiva el login con Google (401) |
 | `FAULT_INJECTION` | Lista de fallos controlados para la demo (ver §8); vacía por defecto |
 
 ## 2. Autenticación y roles
@@ -57,10 +56,8 @@ docs/
 **[Decisión propuesta]** Email + contraseña, cuentas precargadas, token JWT.
 
 - `POST /api/auth/login` con `{ "email": "...", "password": "..." }` → `200 { "access_token": "<jwt>", "role": "operator" | "student", "name": "..." }`. Credenciales inválidas: `401`.
-- `POST /api/auth/google` con `{ "credential": "<ID token de Google>" }` → `200` con el mismo cuerpo que `/auth/login`. El backend verifica el ID token (firma RS256 con las claves de Google, `aud` = `GOOGLE_CLIENT_ID`, `iss` de Google, `exp`, `email_verified` verdadero) y busca al usuario por el email normalizado (no por el `sub` de Google: cambiar el email de la cuenta de Google cambia el mapeo); no crea cuentas (eso lo hace `/auth/google/signup`). Requiere un origen JavaScript autorizado válido en Google (localhost, o dominio con HTTPS; no sirven IPs ni HTTP plano fuera de localhost). Token inválido, vencido, de otra audiencia, email no verificado o `GOOGLE_CLIENT_ID` vacío: `401` con el mismo cuerpo que credenciales inválidas. Token válido pero email sin cuenta: `404 NOT_FOUND` "Todavía no tenés cuenta" (el email sale de un token de Google verificado, así que no filtra existencia a terceros). Cuerpo mal formado: `400`. Variable: `GOOGLE_CLIENT_ID` (vacía por defecto).
-- `POST /api/auth/google/signup` con `{ "credential": "<ID token>", "name": "..." (opcional) }` → `200` con el mismo cuerpo que `/auth/login`. Verifica el token igual que `/auth/google` (mismos `401`) y crea una cuenta **siempre con rol `student`**: no acepta rol del cliente (campos extra se ignoran). Si el email ya tiene cuenta no crea ni modifica nada (ni nombre ni rol) y se comporta como login; si dos requests compiten por el mismo email, la perdedora re-lee y hace login. `name` se recorta; más de 100 caracteres → `400 VALIDATION_ERROR`; vacío u omitido → claim `name` del token, y si no hay, la parte local del email. Institución de la cuenta nueva: la primera por `name` (desempate por id) de las existentes (en la demo, la única sembrada, "Instituto Demo"); si no hay ninguna → `401` genérico. `password_hash` es un hash bcrypt de un valor aleatorio descartado: la cuenta no puede entrar por contraseña, solo por Google.
 - JWT HS256, claims `sub` (id de usuario), `role`, `exp` (8 h). Cabecera `Authorization: Bearer <jwt>`.
-- Contraseñas almacenadas con bcrypt. Datos sintéticos; sin recuperación de contraseña; el único alta de cuentas es el signup de alumno con Google.
+- Contraseñas almacenadas con bcrypt. Datos sintéticos; sin recuperación de contraseña; las cuentas las crea la siembra inicial (`init`).
 - Rutas `/api/verify/*` son públicas. Todas las demás exigen token; el rol se comprueba en el backend, nunca solo en el frontend.
 
 ## 3. Esquema de base de datos (PostgreSQL)
@@ -158,8 +155,6 @@ Prefijo `/api`. JSON salvo donde se indica. Errores con formato único:
 | Método y ruta | Rol | Propósito |
 | --- | --- | --- |
 | `POST /auth/login` | público | Ver §2 |
-| `POST /auth/google` | público | Ver §2 |
-| `POST /auth/google/signup` | público | Ver §2 (alta de alumno) |
 | `POST /batches` | operator | Aceptar un lote |
 | `GET /batches` | operator | Listar lotes propios, más recientes primero (máx. 100). Cada elemento: `{ batch_id, course_name, completion_date, status, total, counts{pending,processing,issued,failed}, created_at }` |
 | `GET /batches/{id}` | operator | Avance y detalle por alumno |

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { CertificateItem } from '../../api';
 import { Alert, Button, Card } from '../../components/ui';
+import { PROFILES_ENABLED } from '../../config/features';
 import { formatDate } from '../verify/RegisteredDataCard';
 import { usePdfDownload } from './usePdfDownload';
 
@@ -29,7 +30,9 @@ export function CertificateCard({ cert }: { cert: CertificateItem }) {
       >
         {dl === 'error' ? '↻ Descargar PDF' : '↓ Descargar PDF'}
       </Button>
-      <Link className="lnk-draw cert-detail" to={`/student/certificates/${cert.certificate_id}`} aria-label={`Ver detalle de ${cert.course_name}`}>Ver detalle</Link>
+      {PROFILES_ENABLED && (
+        <Link className="lnk-draw cert-detail" to={`/student/certificates/${cert.certificate_id}`} aria-label={`Ver detalle de ${cert.course_name}`}>Ver detalle</Link>
+      )}
     </Card>
   );
 }

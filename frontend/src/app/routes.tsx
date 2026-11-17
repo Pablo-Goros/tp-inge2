@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Outlet, type RouteObject } from 'react-router-dom';
 import { NotFoundPage } from '../features/errors/NotFoundPage';
+import { PROFILES_ENABLED } from '../config/features';
 import { RouteErrorPage } from '../features/errors/UnexpectedErrorPage';
 import { BatchDetailPage } from '../features/operator/BatchDetailPage';
 import { BatchListPage } from '../features/operator/BatchListPage';
@@ -49,15 +50,19 @@ export const buildRoutes = (client?: ApiClient): RouteObject[] => [
             children: [
               { path: '/verify', element: <VerifyPage /> }, // TODO(equipo): el contrato verifica por cert_id; /verify sin id solo lo usa el enlace del login
               { path: '/verify/:certId', element: <VerifyPage /> },
-              { path: '/p/:slug', element: <PublicProfilePage /> }, // pública
-              { path: '/directory', element: <Lazy><DirectoryPage /></Lazy> }, // pública
+              ...(PROFILES_ENABLED ? [
+                { path: '/p/:slug', element: <PublicProfilePage /> }, // pública
+                { path: '/directory', element: <Lazy><DirectoryPage /></Lazy> }, // pública
+              ] : []),
               {
                 element: <RequireRole role="any"><Outlet /></RequireRole>,
                 children: [
                   { path: '/home', element: <HomePage /> },
-                  { path: '/profile', element: <ProfilePage /> },
-                  { path: '/profile/edit', element: <Lazy><ProfileEditPage /></Lazy> },
-                  { path: '/profile/settings', element: <Lazy><ProfileSettingsPage /></Lazy> },
+                  ...(PROFILES_ENABLED ? [
+                    { path: '/profile', element: <ProfilePage /> },
+                    { path: '/profile/edit', element: <Lazy><ProfileEditPage /></Lazy> },
+                    { path: '/profile/settings', element: <Lazy><ProfileSettingsPage /></Lazy> },
+                  ] : []),
                 ],
               },
               {
@@ -72,7 +77,7 @@ export const buildRoutes = (client?: ApiClient): RouteObject[] => [
                 element: <RequireRole role="student"><Outlet /></RequireRole>,
                 children: [
                   { path: '/student/certificates', element: <MyCertificatesPage /> },
-                  { path: '/student/certificates/:id', element: <CertificateDetailPage /> },
+                  ...(PROFILES_ENABLED ? [{ path: '/student/certificates/:id', element: <CertificateDetailPage /> }] : []), // GET /certificates/{id} no existe en el backend
                 ],
               },
               { path: '*', element: <NotFoundPage /> },

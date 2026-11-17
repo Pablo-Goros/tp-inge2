@@ -66,10 +66,6 @@ export interface CreateBatchResult {
  */
 export interface ApiClient {
   login(email: string, password: string): Promise<LoginResponse>;
-  /** POST /auth/google con el ID token de Google. 401 → UNAUTHENTICATED (no cierra sesión); 404 → NOT_FOUND = email sin cuenta (ofrecer el alta). */
-  loginWithGoogle(credential: string): Promise<LoginResponse>;
-  /** POST /auth/google/signup: crea la cuenta de alumno (nunca operador) y devuelve el login. `name` opcional. */
-  signupWithGoogle(credential: string, name?: string): Promise<LoginResponse>;
   createBatch(input: CreateBatchInput): Promise<CreateBatchResult>;
   listBatches(): Promise<BatchSummary[]>;
   getBatch(id: string): Promise<BatchDetail>;

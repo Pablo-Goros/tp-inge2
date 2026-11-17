@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => ({
   },
   test: {
     environment: 'jsdom',
+    env: { VITE_PROFILES: 'on' }, // los tests cubren las pantallas de perfiles
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,

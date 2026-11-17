@@ -23,7 +23,6 @@ x-backend-env: &backend-env
   INIT_TIMEOUT_SECONDS: ${INIT_TIMEOUT_SECONDS:-60}
   BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
   FAULT_INJECTION: ${FAULT_INJECTION:-}
-  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
 
 # Una sola imagen para init, api, publisher y worker; cambia el módulo.
 # El Dockerfile tiene ENTRYPOINT ["python", "-m"]: el command es solo el módulo.

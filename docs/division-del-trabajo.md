@@ -63,13 +63,14 @@ Bloquea al resto. Se commitea en `docs/contracts.md`:
 
 **Carpeta propia:** `backend/app/application`, `backend/app/infrastructure`, `backend/app/entrypoints/worker`
 
-## Frente D: Infraestructura, evidencia y documentos
+## Frente D: Infraestructura, evidencia y documentos y presentacion de powerpoint
 
 **Responsabilidad:**
 - `compose.yaml` (PostgreSQL, RabbitMQ y, a medida que existan, los servicios de A, B y C), healthchecks y tarea `init`.
 - Cuenta y VM en la nube; despliegue del mismo flujo con credenciales para la cátedra.
 - Escenarios de falla repetibles: worker caído, broker caído, error transitorio y permanente, mismo mensaje reenviado.
 - White paper (máx. 5 páginas), README, guion de demo y diapositivas.
+-Hacer el powerpoint del jueves A MANO! No lo hagan con ninguna IA
 
 **Arranca con:** compose con PostgreSQL y RabbitMQ y contenedores placeholder; y la verificación de elegibilidad cloud (**primera tarea de todas, hoy**).
 

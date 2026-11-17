@@ -4,7 +4,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { createMockClient } from '../../api/mock/MockApiClient';
 import { clearSession, loadSession, saveSession } from '../../api/token';
 import { buildRoutes } from '../../app/routes';
-import { homeFor, useApi, useAuth } from './AuthProvider';
+import { homeFor, useApi } from './AuthProvider';
 
 const client = (sc: string[] = []) => createMockClient({ latencyMs: 0, scenarios: () => new Set(sc) });
 
@@ -174,55 +174,3 @@ describe('sesión', () => {
   });
 });
 
-describe('loginWithGoogle', () => {
-  function GoogleProbe() {
-    const auth = useAuth();
-    return (
-      <>
-        <button onClick={() => auth.loginWithGoogle('mock-google:alumno01@demo.test').catch(() => {})}>google ok</button>
-        <button onClick={() => auth.api.loginWithGoogle('basura').catch(() => {})}>google mal</button>
-        <button onClick={() => auth.signupWithGoogle('mock-google:nuevo.alumno@demo.test', 'Nuevo Alumno').catch(() => {})}>signup ok</button>
-        <button onClick={() => auth.api.signupWithGoogle('basura').catch(() => {})}>signup mal</button>
-      </>
-    );
-  }
-  function renderProbe() {
-    const routes = buildRoutes(client());
-    routes[0].children![0].children = [{ path: '/probe', element: <GoogleProbe /> }, { path: '/login', element: <p>pantalla login</p> }];
-    const router = createMemoryRouter(routes, { initialEntries: ['/probe'] });
-    render(<RouterProvider router={router} />);
-    return router;
-  }
-
-  it('guarda usuario y token como login', async () => {
-    renderProbe();
-    await userEvent.click(screen.getByRole('button', { name: 'google ok' }));
-    await waitFor(() => expect(loadSession()?.user.role).toBe('student'));
-    expect(loadSession()?.token).toBe('mock:alumno01@demo.test');
-  });
-
-  it('un 401 no cierra la sesión ni redirige', async () => {
-    saveSession(operator);
-    const router = renderProbe();
-    await userEvent.click(screen.getByRole('button', { name: 'google mal' }));
-    await new Promise((r) => setTimeout(r, 20));
-    expect(router.state.location.pathname).toBe('/probe');
-    expect(loadSession()).not.toBeNull();
-  });
-
-  it('signupWithGoogle guarda usuario y token como login', async () => {
-    renderProbe();
-    await userEvent.click(screen.getByRole('button', { name: 'signup ok' }));
-    await waitFor(() => expect(loadSession()?.user).toEqual({ name: 'Nuevo Alumno', role: 'student' }));
-    expect(loadSession()?.token).toBe('mock:nuevo.alumno@demo.test');
-  });
-
-  it('un 401 en signupWithGoogle no cierra la sesión ni redirige', async () => {
-    saveSession(operator);
-    const router = renderProbe();
-    await userEvent.click(screen.getByRole('button', { name: 'signup mal' }));
-    await new Promise((r) => setTimeout(r, 20));
-    expect(router.state.location.pathname).toBe('/probe');
-    expect(loadSession()).not.toBeNull();
-  });
-});

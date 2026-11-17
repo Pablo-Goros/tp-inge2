@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { CertificateItem } from '../../api';
 import { Alert, Button, EmptyState, LinkButton } from '../../components/ui';
+import { PROFILES_ENABLED } from '../../config/features';
 import { useApi } from '../session/AuthProvider';
 import { usePdfDownload } from '../student/usePdfDownload';
 import { formatDate } from '../verify/RegisteredDataCard';
@@ -12,7 +13,9 @@ function CertRow({ cert }: { cert: CertificateItem }) {
   return (
     <li className="hm-cert">
       <div className="hm-cert-main">
-        <Link className="lnk-draw hm-cert-title" to={`/student/certificates/${cert.certificate_id}`}>{cert.course_name}</Link>
+        {PROFILES_ENABLED
+          ? <Link className="lnk-draw hm-cert-title" to={`/student/certificates/${cert.certificate_id}`}>{cert.course_name}</Link>
+          : <span className="hm-cert-title">{cert.course_name}</span>}
         <span className="help">Emitido el {formatDate(cert.issued_at)}{cert.institution ? ` · ${cert.institution}` : ''}</span>
         {state === 'error' && <Alert tone="error">No se pudo descargar el PDF. Probá de nuevo.</Alert>}
       </div>
@@ -42,9 +45,11 @@ export function StudentShortcutsCard({ span }: { span?: string }) {
     <section className={['card', 'hm-card', span].filter(Boolean).join(' ')} aria-labelledby="hm-sc-h">
       <header className="hm-card-head"><h2 id="hm-sc-h" className="hm-card-title">Atajos</h2></header>
       <div className="hm-shortcuts">
-        <LinkButton to="/profile/edit">Editar perfil</LinkButton>
-        <LinkButton to="/student/certificates" variant="secondary">Ver mis certificados</LinkButton>
-        <LinkButton to="/directory" variant="secondary">Explorar el directorio</LinkButton>
+        {PROFILES_ENABLED && <LinkButton to="/profile/edit">Editar perfil</LinkButton>}
+        <LinkButton to="/student/certificates" variant={PROFILES_ENABLED ? 'secondary' : undefined}>Ver mis certificados</LinkButton>
+        {PROFILES_ENABLED
+          ? <LinkButton to="/directory" variant="secondary">Explorar el directorio</LinkButton>
+          : <LinkButton to="/verify" variant="secondary">Verificar un certificado</LinkButton>}
       </div>
     </section>
   );
