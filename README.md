@@ -13,7 +13,7 @@ Entrega: **19/11/2026** · Defensa: **26/11/2026** · [Enunciado](docs/reference
 | Inicialización automática (migraciones, usuarios demo, colas) | ✅ Funciona |
 | Worker (PDF + QR + registro) | ✅ Implementado: emisión recuperable, reintentos y DLQ |
 | Verificación pública `/api/verify/...` | ✅ Conectada al registro simulado de C |
-| Frontend | 🟡 En `frontend/` (React): mock por defecto, `VITE_API=http` para el backend real (aún sin verificar de punta a punta). Faltan Dockerfile/nginx (en Compose sigue un placeholder que reenvía `/api`) y los endpoints de perfiles en el backend |
+| Frontend | ✅ React servido por Nginx en http://localhost:8080 contra la API real: operador, alumno y verificación pública. Perfiles y directorio quedan ocultos porque el backend no tiene esos endpoints ([detalle](frontend/src/config/features.ts)) |
 | Despliegue en la nube | ✅ VM en Azure, 10/10 escenarios PASS allí ([detalle](docs/cloud-setup.md)) |
 
 ## Cómo funciona
@@ -40,7 +40,7 @@ Alumno ──► descarga su PDF        Verificador ──► QR o subir PDF ─
 
 El registro de huellas es un **registro simulado** (tabla de solo inserción), reemplazable por blockchain sin cambiar la API. Detalle en [arquitectura](docs/architecture.md) y [contratos](docs/contracts.md).
 
-El PDF es un diploma A4 horizontal en español. Incluye la nota solamente cuando fue informada; sus bytes y huella se conservan ante reintentos. El QR apunta a `/verify/{id}`, pantalla del frontend. Hasta que el frontend se sirva desde Compose, la verificación real se prueba por `/api/verify/{id}` y `/api/verify/{id}/file`.
+El PDF es un diploma A4 horizontal en español. Incluye la nota solamente cuando fue informada; sus bytes y huella se conservan ante reintentos. El QR apunta a `/verify/{id}`, la pantalla pública de verificación del frontend; por API, lo mismo se prueba con `/api/verify/{id}` y `/api/verify/{id}/file`.
 
 La entrega de [C](docs/specs/frente-c-emision/entrega.md) detalla implementación y evidencia. Para generar una muestra visual sintética, sin registrarla: instalar `backend[test]` en un entorno virtual y ejecutar `python scripts/preview_certificate.py`; el resultado queda en `output/pdf/certificado-demo.pdf`.
 
