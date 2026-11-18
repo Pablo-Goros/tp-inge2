@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 from functools import lru_cache
 import uuid
 from collections.abc import Callable
@@ -6,17 +7,18 @@ from collections.abc import Callable
 import bcrypt
 import jwt
 from fastapi import APIRouter, Depends
+from sqlalchemy.exc import IntegrityError
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.api.errors import forbidden, unauthenticated
+from app.api.errors import ApiError, forbidden, unauthenticated
 from app.api.schemas import ErrorResponse
 from app.config import get_settings
 from app.domain.normalize import normalize_email
 from app.infrastructure.db import get_session
-from app.infrastructure.models import User
+from app.infrastructure.models import Institution, User
 
 TOKEN_TTL = dt.timedelta(hours=8)
 _bearer = HTTPBearer(auto_error=False, description="JWT obtenido en POST /api/auth/login")
@@ -46,6 +48,35 @@ class LoginResponse(BaseModel):
     name: str
 
 
+class RegisterRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    email: str = Field(max_length=254)
+    password: str = Field(min_length=8, max_length=72)
+
+    @field_validator("name")
+    @classmethod
+    def _name(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("no puede estar vacío")
+        return v
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, v: str) -> str:
+        v = normalize_email(v)
+        if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", v):
+            raise ValueError("email inválido")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def _password(cls, v: str) -> str:
+        if len(v.encode()) > 72:  # límite de bcrypt
+            raise ValueError("máximo 72 bytes")
+        return v
+
+
 def create_token(user: User) -> str:
     claims = {
         "sub": str(user.id),
@@ -70,6 +101,36 @@ def login(body: LoginRequest, session: Session = Depends(get_session)):
     if not ok:
         raise unauthenticated("Credenciales inválidas")
     return LoginResponse(access_token=create_token(user), role=user.role, name=user.name)
+
+
+@router.post(
+    "/register",
+    status_code=201,
+    response_model=LoginResponse,
+    responses={400: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+)
+def register(body: RegisterRequest, session: Session = Depends(get_session)):
+    """Alta de alumno con email y contraseña. Devuelve lo mismo que login (sesión iniciada)."""
+    if session.scalar(select(User.id).where(User.email == body.email)) is not None:
+        raise _email_taken()
+    inst_id = session.scalar(select(Institution.id).order_by(Institution.name).limit(1))
+    if inst_id is None:
+        raise ApiError(503, "UNAVAILABLE", "El sistema aún no está inicializado")
+    user = User(
+        institution_id=inst_id, email=body.email, name=body.name, role="student",
+        password_hash=hash_password(body.password, get_settings().bcrypt_rounds),
+    )
+    session.add(user)
+    try:
+        session.commit()
+    except IntegrityError:  # carrera: otro registro con el mismo email entre el SELECT y el INSERT
+        session.rollback()
+        raise _email_taken() from None
+    return LoginResponse(access_token=create_token(user), role=user.role, name=user.name)
+
+
+def _email_taken() -> ApiError:
+    return ApiError(409, "CONFLICT", "Ya existe una cuenta con ese email")
 
 
 def current_user(

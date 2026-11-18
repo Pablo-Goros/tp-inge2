@@ -8,6 +8,7 @@ export const homeFor = (role: Role) => (role === 'operator' ? '/operator/batches
 interface AuthValue {
   user: SessionUser | null;
   login(email: string, password: string): Promise<SessionUser>;
+  register(name: string, email: string, password: string): Promise<SessionUser>;
   logout(): void;
   /** Cliente de API que cierra la sesión y lleva a /login ante cualquier 401. */
   api: ApiClient;
@@ -25,6 +26,7 @@ function withUnauthorized(client: ApiClient, onUnauthorized: () => void): ApiCli
     }
   };
   return {
+    register: (n, e, p) => client.register(n, e, p), // un 401/409 aquí no es sesión vencida
     login: client.login.bind(client), // un 401 en login es "credenciales inválidas", no sesión vencida
     createBatch: guard(client.createBatch.bind(client)),
     listBatches: guard(client.listBatches.bind(client)),
@@ -63,6 +65,12 @@ export function AuthProvider({ client = defaultApi, children }: { client?: ApiCl
     api: guarded,
     async login(email, password) {
       const res = await client.login(email, password);
+      saveSession({ token: res.token, user: res.user });
+      setUser(res.user);
+      return res.user;
+    },
+    async register(name, email, password) {
+      const res = await client.register(name, email, password);
       saveSession({ token: res.token, user: res.user });
       setUser(res.user);
       return res.user;

@@ -3,7 +3,7 @@ import { getToken } from './token';
 import type { LoginResponse, Role } from './types';
 
 const BASE = '/api';
-const CODES: ApiErrorCode[] = ['VALIDATION_ERROR', 'UNAUTHENTICATED', 'FORBIDDEN', 'NOT_FOUND', 'IDEMPOTENCY_CONFLICT', 'UNAVAILABLE', 'HTTP_ERROR', 'INTERNAL_ERROR'];
+const CODES: ApiErrorCode[] = ['VALIDATION_ERROR', 'UNAUTHENTICATED', 'FORBIDDEN', 'NOT_FOUND', 'IDEMPOTENCY_CONFLICT', 'CONFLICT', 'UNAVAILABLE', 'HTTP_ERROR', 'INTERNAL_ERROR'];
 
 async function toError(res: Response): Promise<ApiError> {
   try {
@@ -37,6 +37,13 @@ export const httpClient: ApiClient = {
   async login(email, password) {
     const res = await request('/auth/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }),
+    }, false);
+    const b = await json<{ access_token: string; role: Role; name: string }>(res);
+    return { token: b.access_token, user: { name: b.name, role: b.role } } satisfies LoginResponse;
+  },
+  async register(name, email, password) {
+    const res = await request('/auth/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password }),
     }, false);
     const b = await json<{ access_token: string; role: Role; name: string }>(res);
     return { token: b.access_token, user: { name: b.name, role: b.role } } satisfies LoginResponse;

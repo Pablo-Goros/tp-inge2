@@ -45,6 +45,7 @@ export function createMockClient(opts: MockOptions = {}): ApiClient {
   const batches: MockBatch[] = seedBatches(now());
   const idem = new Map<string, { fingerprint: string; result: CreateBatchResult }>();
   let frozenAt: number | null = null;
+  const passwords = new Map<string, string>(); // cuentas creadas con register()
 
   const delay = (ms: number) => (ms > 0 ? new Promise<void>((r) => setTimeout(r, ms)) : Promise.resolve());
 
@@ -109,8 +110,21 @@ export function createMockClient(opts: MockOptions = {}): ApiClient {
     async login(email, password): Promise<LoginResponse> {
       await gate({ anonymous: true });
       const user = USERS.find((u) => u.email === email.trim().toLowerCase());
-      if (!user || password !== DEMO_PASSWORD) throw new ApiError(401, 'UNAUTHENTICATED', 'Email o contraseña incorrectos.');
+      if (!user || password !== (passwords.get(user.email) ?? DEMO_PASSWORD)) throw new ApiError(401, 'UNAUTHENTICATED', 'Email o contraseña incorrectos.');
       return { token: TOKEN_PREFIX + user.email, user: { name: user.name, role: user.role } };
+    },
+
+    async register(name, email, password): Promise<LoginResponse> {
+      await gate({ anonymous: true });
+      const e = email.trim().toLowerCase();
+      if (!name.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e) || password.length < 8) {
+        throw new ApiError(400, 'VALIDATION_ERROR', 'Solicitud inválida');
+      }
+      if (USERS.some((u) => u.email === e)) throw new ApiError(409, 'CONFLICT', 'Ya existe una cuenta con ese email');
+      const user: MockUser = { email: e, name: name.trim(), role: 'student' };
+      USERS.push(user);
+      passwords.set(e, password);
+      return { token: TOKEN_PREFIX + e, user: { name: user.name, role: user.role } };
     },
 
     async createBatch({ courseName, completionDate, file, idempotencyKey }: CreateBatchInput): Promise<CreateBatchResult> {

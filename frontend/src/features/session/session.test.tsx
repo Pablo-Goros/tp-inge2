@@ -174,3 +174,33 @@ describe('sesión', () => {
   });
 });
 
+
+describe('registro', () => {
+  async function fillRegister(name: string, email: string, pass: string, confirm = pass) {
+    await userEvent.type(screen.getByLabelText('Nombre'), name);
+    await userEvent.type(screen.getByLabelText('Email'), email);
+    await userEvent.type(screen.getByLabelText('Contraseña'), pass);
+    await userEvent.type(screen.getByLabelText('Repetir contraseña'), confirm);
+    await userEvent.click(screen.getByRole('button', { name: 'Crear cuenta' }));
+  }
+
+  it('crea la cuenta y entra como alumno', async () => {
+    const router = renderAt('/register');
+    await fillRegister('Ana Nueva', 'ana.nueva@demo.test', 'clave-larga-1');
+    await waitFor(() => expect(router.state.location.pathname).toBe('/student/certificates'));
+    expect(loadSession()?.user).toEqual({ name: 'Ana Nueva', role: 'student' });
+  });
+
+  it('email repetido muestra el error y no inicia sesión', async () => {
+    renderAt('/register');
+    await fillRegister('Otra', 'alumno01@demo.test', 'clave-larga-1');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Ya existe una cuenta con ese email');
+    expect(loadSession()).toBeNull();
+  });
+
+  it('contraseñas distintas no envían', async () => {
+    renderAt('/register');
+    await fillRegister('Ana', 'ana2@demo.test', 'clave-larga-1', 'otra-clave-1');
+    expect(await screen.findByRole('alert')).toHaveTextContent('coincidir');
+  });
+});

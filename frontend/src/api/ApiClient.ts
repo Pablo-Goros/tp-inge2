@@ -5,7 +5,7 @@ import type {
 
 /** Códigos de error de docs/contracts.md §5, más 'NETWORK' (sin respuesta del servidor). */
 export type ApiErrorCode =
-  | 'VALIDATION_ERROR' | 'UNAUTHENTICATED' | 'FORBIDDEN' | 'NOT_FOUND' | 'IDEMPOTENCY_CONFLICT'
+  | 'VALIDATION_ERROR' | 'UNAUTHENTICATED' | 'FORBIDDEN' | 'NOT_FOUND' | 'IDEMPOTENCY_CONFLICT' | 'CONFLICT'
   | 'UNAVAILABLE' | 'HTTP_ERROR' | 'INTERNAL_ERROR' | 'NETWORK';
 
 export class ApiError extends Error {
@@ -66,6 +66,8 @@ export interface CreateBatchResult {
  */
 export interface ApiClient {
   login(email: string, password: string): Promise<LoginResponse>;
+  /** Alta de alumno. 409 CONFLICT si el email ya existe; 400 VALIDATION_ERROR. Devuelve la sesión iniciada. */
+  register(name: string, email: string, password: string): Promise<LoginResponse>;
   createBatch(input: CreateBatchInput): Promise<CreateBatchResult>;
   listBatches(): Promise<BatchSummary[]>;
   getBatch(id: string): Promise<BatchDetail>;

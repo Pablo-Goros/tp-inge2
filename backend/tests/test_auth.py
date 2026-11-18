@@ -163,3 +163,28 @@ def test_operator_forbidden_on_student_route(client, users):
     token = login(client, "op@itba.test").json()["access_token"]
     r = client.get("/api/me/certificates", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 403
+
+
+def register(client, **kw):
+    body = {"name": "Nueva Persona", "email": "nueva@itba.test", "password": "clave-larga-1"} | kw
+    return client.post("/api/auth/register", json=body)
+
+
+def test_register_ok_creates_student_and_can_login(client, users):
+    r = register(client, email="  Nueva@Itba.Test ")
+    assert r.status_code == 201
+    assert r.json()["role"] == "student" and r.json()["name"] == "Nueva Persona"
+    assert login(client, "nueva@itba.test", "clave-larga-1").status_code == 200
+
+
+def test_register_duplicate_email_409(client, users):
+    assert register(client).status_code == 201
+    r = register(client, email="NUEVA@itba.test")
+    assert r.status_code == 409
+    assert r.json()["error"]["code"] == "CONFLICT"
+
+
+def test_register_validation_400(client, users):
+    assert register(client, password="corta").status_code == 400
+    assert register(client, email="no-es-email").status_code == 400
+    assert register(client, name="   ").status_code == 400

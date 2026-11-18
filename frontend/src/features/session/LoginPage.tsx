@@ -64,6 +64,7 @@ export function LoginPage() {
             value={password} onChange={(e) => setPassword(e.target.value)} readOnly={loading} aria-invalid={invalid || undefined} required />
           <Button type="submit" block loading={loading} loadingLabel="Ingresando…">Ingresar</Button>
           <div className="login-foot">
+            <Link className="lnk" to="/register">Crear una cuenta →</Link>
             <Link className="lnk" to="/verify">Verificar un certificado →</Link>
             <span className="help">No hace falta cuenta para verificar.</span>
           </div>

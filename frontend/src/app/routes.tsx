@@ -13,6 +13,7 @@ import { CertificateDetailPage } from '../features/student/CertificateDetailPage
 import { MyCertificatesPage } from '../features/student/MyCertificatesPage';
 import { AuthProvider, homeFor, useAuth } from '../features/session/AuthProvider';
 import { LoginPage } from '../features/session/LoginPage';
+import { RegisterPage } from '../features/session/RegisterPage';
 import { RequireRole } from '../features/session/RequireRole';
 import { VerifyPage } from '../features/verify/VerifyPage';
 import { AppLayout } from './AppLayout';
@@ -45,6 +46,7 @@ export const buildRoutes = (client?: ApiClient): RouteObject[] => [
         children: [
           { path: '/', element: <RootRedirect /> },
           { path: '/login', element: <LoginPage /> },
+          { path: '/register', element: <RegisterPage /> },
           {
             element: <AppLayout />,
             children: [
