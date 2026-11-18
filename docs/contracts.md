@@ -56,8 +56,9 @@ docs/
 **[Decisión propuesta]** Email + contraseña, cuentas precargadas, token JWT.
 
 - `POST /api/auth/login` con `{ "email": "...", "password": "..." }` → `200 { "access_token": "<jwt>", "role": "operator" | "student", "name": "..." }`. Credenciales inválidas: `401`.
+- `POST /api/auth/register` con `{ "name": "...", "email": "...", "password": "..." }` → `201` con el mismo cuerpo que `/auth/login` (sesión iniciada). Crea siempre una cuenta **`student`** de la primera institución por nombre. `name` de 1 a 100 caracteres (se recorta), email normalizado y con formato válido, contraseña de 8 a 72 bytes. Datos inválidos: `400 VALIDATION_ERROR`. Email ya registrado: `409 CONFLICT`. Sin institución sembrada: `503`. El email no se verifica.
 - JWT HS256, claims `sub` (id de usuario), `role`, `exp` (8 h). Cabecera `Authorization: Bearer <jwt>`.
-- Contraseñas almacenadas con bcrypt. Datos sintéticos; sin recuperación de contraseña; las cuentas las crea la siembra inicial (`init`).
+- Contraseñas almacenadas con bcrypt. Datos sintéticos; sin recuperación de contraseña. El operador y los alumnos de demo los crea la siembra inicial (`init`); otros alumnos se registran con `/auth/register`.
 - Rutas `/api/verify/*` son públicas. Todas las demás exigen token; el rol se comprueba en el backend, nunca solo en el frontend.
 
 ## 3. Esquema de base de datos (PostgreSQL)
@@ -146,6 +147,7 @@ Prefijo `/api`. JSON salvo donde se indica. Errores con formato único:
 | 403 | `FORBIDDEN` | Rol o dueño incorrecto |
 | 404 | `NOT_FOUND` | Recurso inexistente (o ajeno, para no filtrar existencia) |
 | 409 | `IDEMPOTENCY_CONFLICT` | Misma `Idempotency-Key` con contenido distinto |
+| 409 | `CONFLICT` | Registro con un email que ya tiene cuenta |
 | 503 | `UNAVAILABLE` | Dependencia no disponible |
 | (otro 4xx/5xx HTTP) | `HTTP_ERROR` | Error HTTP no listado (p. ej. 405); conserva el estado original |
 | 500 | `INTERNAL_ERROR` | Excepción no controlada; mensaje genérico, sin detalles internos |
@@ -155,6 +157,7 @@ Prefijo `/api`. JSON salvo donde se indica. Errores con formato único:
 | Método y ruta | Rol | Propósito |
 | --- | --- | --- |
 | `POST /auth/login` | público | Ver §2 |
+| `POST /auth/register` | público | Alta de alumno; ver §2 |
 | `POST /batches` | operator | Aceptar un lote |
 | `GET /batches` | operator | Listar lotes propios, más recientes primero (máx. 100). Cada elemento: `{ batch_id, course_name, completion_date, status, total, counts{pending,processing,issued,failed}, created_at }` |
 | `GET /batches/{id}` | operator | Avance y detalle por alumno |

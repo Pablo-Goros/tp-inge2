@@ -76,6 +76,8 @@ Contraseña de todos: `demo1234`.
 | Operador | `operador@demo.test` |
 | Alumnos | `alumno01@demo.test` … `alumno25@demo.test` |
 
+También se puede crear una cuenta de alumno desde «Crear una cuenta» en el login (`POST /api/auth/register`). Para que reciba un certificado, su email tiene que estar en el CSV del lote.
+
 ### Datos de prueba
 
 | Archivo | Contenido | Resultado esperado al subirlo |
